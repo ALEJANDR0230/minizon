@@ -50,10 +50,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('reports/export', [AdminReportController::class, 'export']);
 
         Route::get('users', [UserController::class, 'index']);
-        Route::post('users', [UserController::class, 'store']);
         Route::get('users/{user}', [UserController::class, 'show']);
-        Route::put('users/{user}', [UserController::class, 'update']);
-        Route::delete('users/{user}', [UserController::class, 'destroy']);
+        Route::patch('users/{user}/block', [UserController::class, 'setBlocked']);
 
         Route::get('categories', [CategoryController::class, 'adminIndex']);
         Route::post('categories', [CategoryController::class, 'store']);

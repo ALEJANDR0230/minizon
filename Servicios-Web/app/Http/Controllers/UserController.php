@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
 
 class UserController extends Controller
 {
@@ -53,6 +54,26 @@ class UserController extends Controller
         $user->update($data);
 
         return response()->json($user->fresh()->loadCount('orders'));
+    }
+
+    public function setBlocked(Request $request, User $user)
+    {
+        $data = $request->validate([
+            'is_blocked' => ['required', 'boolean'],
+        ]);
+
+        abort_if($user->role === 'admin', 403, 'La cuenta administrativa no se puede bloquear');
+
+        $user->update(['is_blocked' => $data['is_blocked']]);
+
+        if ($user->is_blocked) {
+            $user->tokens()->delete();
+        }
+
+        return response()->json([
+            'message' => $user->is_blocked ? 'Usuario bloqueado correctamente' : 'Usuario reactivado correctamente',
+            'user' => $user->fresh()->loadCount('orders'),
+        ]);
     }
 
     public function destroy(Request $request, User $user)

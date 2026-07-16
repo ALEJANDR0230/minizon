@@ -33,13 +33,38 @@ export default function AdminDashboardPage() {
     ['Reseñas', metrics.reviews ?? 0, '/admin/resenas', 'Opiniones recibidas'],
     ['Alertas críticas', metrics.critical_alerts ?? 0, '/admin/asesor-ia', 'Requieren prioridad'],
   ];
+  const lowStockProducts = data?.low_stock_products || [];
+  const outOfStockCount = lowStockProducts.filter((product) => Number(product.stock) === 0).length;
+  const monitoringItems = [
+    {
+      label: 'Pedidos pendientes',
+      value: metrics.pending_orders ?? 0,
+      detail: Number(metrics.pending_orders) > 0 ? 'Requieren seguimiento' : 'Operación al día',
+      path: '/admin/pedidos',
+      tone: Number(metrics.pending_orders) > 0 ? 'warning' : 'ok',
+    },
+    {
+      label: 'Inventario crítico',
+      value: lowStockProducts.length,
+      detail: outOfStockCount > 0 ? `${outOfStockCount} productos agotados` : 'Sin productos agotados',
+      path: '/admin/productos',
+      tone: outOfStockCount > 0 ? 'critical' : lowStockProducts.length > 0 ? 'warning' : 'ok',
+    },
+    {
+      label: 'Alertas críticas',
+      value: metrics.critical_alerts ?? 0,
+      detail: Number(metrics.critical_alerts) > 0 ? 'Revisar recomendaciones' : 'Sin alertas críticas',
+      path: '/admin/asesor-ia',
+      tone: Number(metrics.critical_alerts) > 0 ? 'critical' : 'ok',
+    },
+  ];
 
   return (
     <>
       <PageHeader
-        eyebrow="Centro de control"
+        eyebrow="Administración"
         title={`${greeting}, ${firstName}`}
-        description="Aquí tienes lo más importante de tu tienda para que puedas decidir con calma qué atender primero."
+        description="Resumen operativo de la tienda."
         actions={<Link className="button button-primary" to="/admin/asesor-ia">Hablar con el asistente</Link>}
       />
       <Message type="error">{error}</Message>
@@ -52,8 +77,19 @@ export default function AdminDashboardPage() {
         ))}
       </section>
 
+      <section className="monitoring-zone">
+        <div className="monitoring-heading"><div><span className="live-indicator"><i />Monitoreo activo</span><h2>Estado operativo</h2></div><small>Información actual de la tienda</small></div>
+        <div className="monitoring-grid">
+          {monitoringItems.map((item) => (
+            <Link className={`monitor-card monitor-${item.tone}`} key={item.label} to={item.path}>
+              <span>{item.label}</span><strong>{item.value}</strong><small>{item.detail}</small><b>Ver detalle</b>
+            </Link>
+          ))}
+        </div>
+      </section>
+
       <section className="quick-actions">
-        <div><h2>¿Qué quieres hacer ahora?</h2><p>Atajos para las tareas más comunes.</p></div>
+        <div><h2>Acciones rápidas</h2><p>Herramientas de administración.</p></div>
         <nav aria-label="Acciones rápidas">
           <Link to="/admin/productos"><span>＋</span><b>Agregar o editar productos</b><small>Mantén precios y existencias al día.</small></Link>
           <Link to="/admin/pedidos"><span>✓</span><b>Revisar pedidos</b><small>Consulta lo que falta por atender.</small></Link>
@@ -64,7 +100,7 @@ export default function AdminDashboardPage() {
 
       <section className="dashboard-grid chart-row">
         <article className="admin-panel dashboard-wide">
-          <div className="panel-heading"><div><h2>Así se han movido tus ventas</h2><p>Ingresos diarios de los últimos 14 días.</p></div><Link to="/admin/reportes">Ver informes</Link></div>
+          <div className="panel-heading"><div><h2>Ventas de los últimos 14 días</h2><p>Ingresos diarios.</p></div><Link to="/admin/reportes">Ver informes</Link></div>
           <SalesBarChart data={data?.sales_trend || []} />
         </article>
         <article className="admin-panel">
@@ -74,7 +110,7 @@ export default function AdminDashboardPage() {
       </section>
 
       <section className="admin-panel alerts-panel">
-        <div className="panel-heading"><div><h2>Alertas operativas</h2><p>Se calculan directamente con la información de MySQL.</p></div><Link to="/admin/asesor-ia">Revisar pendientes</Link></div>
+        <div className="panel-heading"><div><h2>Alertas operativas</h2><p>Inventario, pedidos y reseñas.</p></div><Link to="/admin/asesor-ia">Revisar pendientes</Link></div>
         <AlertList alerts={data?.alerts || []} compact />
       </section>
 

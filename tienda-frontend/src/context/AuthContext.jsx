@@ -19,6 +19,18 @@ function normalizeUser(user) {
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(readStoredUser);
   const [checkingSession, setCheckingSession] = useState(Boolean(localStorage.getItem('store_token')));
+  const [sessionMessage, setSessionMessage] = useState('');
+
+  useEffect(() => {
+    function handleUnauthenticated() {
+      clearSession();
+      setSessionMessage('Tu sesión venció. Inicia sesión nuevamente.');
+      setCheckingSession(false);
+    }
+
+    window.addEventListener('store:unauthenticated', handleUnauthenticated);
+    return () => window.removeEventListener('store:unauthenticated', handleUnauthenticated);
+  }, []);
 
   useEffect(() => {
     const token = localStorage.getItem('store_token');
@@ -60,6 +72,7 @@ export function AuthProvider({ children }) {
       clearSession();
       throw new Error('Acceso exclusivo para el administrador.');
     }
+    setSessionMessage('');
     persistSession(data.token, data.user || { email: credentials.email, role: data.role });
     return normalizeUser(data.user || { email: credentials.email, role: data.role });
   }
@@ -77,9 +90,10 @@ export function AuthProvider({ children }) {
     checkingSession,
     isAuthenticated: Boolean(user),
     isAdmin: user?.role === 'admin',
+    sessionMessage,
     login,
     logout,
-  }), [user, checkingSession]);
+  }), [user, checkingSession, sessionMessage]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

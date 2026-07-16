@@ -79,7 +79,7 @@ export default function AdminAdvisorPage() {
 
   return (
     <>
-      <PageHeader eyebrow="Tu asistente administrativo" title="Habla sobre lo que pasa en tu tienda" description="Haz preguntas con tus propias palabras. El asistente consulta la información real de MySQL para ayudarte a entenderla." actions={<button className="button button-secondary" disabled={analyzing} onClick={generate} type="button">{analyzing ? 'Revisando tu tienda…' : 'Actualizar sugerencias'}</button>} />
+      <PageHeader eyebrow="Administración" title="Asistente administrativo" description="Consulta inventario, ventas, pedidos y reseñas." actions={<button className="button button-secondary" disabled={analyzing} onClick={generate} type="button">{analyzing ? 'Actualizando…' : 'Actualizar sugerencias'}</button>} />
       <Message type="error">{error}</Message>
       <Message type="info">{data?.notice}</Message>
 
@@ -87,7 +87,7 @@ export default function AdminAdvisorPage() {
         <aside className="conversation-prompts">
           <span className="conversation-orb">✦</span>
           <h2>¿Qué quieres saber?</h2>
-          <p>Puedes conversar normalmente. Prueba con alguna de estas preguntas:</p>
+          <p>Selecciona una consulta o escribe la tuya.</p>
           <button onClick={(event) => sendMessage(event, '¿Qué productos debo reabastecer primero?')} type="button">¿Qué debo reabastecer?</button>
           <button onClick={(event) => sendMessage(event, '¿Qué oferta me recomiendas hacer y por qué?')} type="button">¿Qué oferta puedo hacer?</button>
           <button onClick={(event) => sendMessage(event, 'Resume cómo van mis ventas y pedidos.')} type="button">¿Cómo van ventas y pedidos?</button>
@@ -121,11 +121,11 @@ export default function AdminAdvisorPage() {
 
       <div className="advisor-layout">
         <section className="admin-panel">
-          <div className="panel-heading"><div><h2>Ideas de promoción</h2><p>Productos que podrían aprovechar una oferta.</p></div></div>
+          <div className="panel-heading"><div><h2>Ofertas recomendadas</h2><p>Promociones sugeridas por inventario y ventas.</p></div></div>
           {data?.offers?.length ? <div className="offer-list">{data.offers.map((offer) => <article key={offer.product_id}><div><span className="offer-discount">-{offer.discount_percent}%</span><span><strong>{offer.product}</strong><small>{offer.stock} unidades · {offer.units_sold_30_days} vendidas</small></span></div><div className="offer-prices"><small>{formatCurrency(offer.current_price)}</small><strong>{formatCurrency(offer.offer_price)}</strong></div><p>{offer.reason}</p></article>)}</div> : <p className="muted panel-empty">No hay una promoción recomendable en este momento.</p>}
         </section>
         <section className="admin-panel">
-          <div className="panel-heading"><div><h2>Pendientes que conviene mirar</h2><p>Situaciones para revisar cuando tengas un momento.</p></div></div>
+          <div className="panel-heading"><div><h2>Alertas administrativas</h2><p>Situaciones que requieren atención.</p></div></div>
           <AlertList alerts={data?.alerts || []} />
         </section>
       </div>

@@ -76,7 +76,7 @@ export default function AdminReportsPage() {
 
   return (
     <>
-      <PageHeader eyebrow="Tus números, claros" title="Informes del negocio" description="Elige un periodo y consulta de forma sencilla cómo van las ventas, el inventario y las opiniones de tus clientes." actions={<button className="button button-secondary print-hidden" onClick={() => window.print()} type="button">Guardar o imprimir</button>} />
+      <PageHeader eyebrow="Administración" title="Reportes" description="Ventas, inventario y reseñas por periodo." actions={<button className="button button-secondary print-hidden" onClick={() => window.print()} type="button">Guardar o imprimir</button>} />
       <Message type="error">{error}</Message>
       <section className="admin-panel report-filters print-hidden">
         <div className="period-presets"><small>Elige rápidamente</small><div><button onClick={() => selectPeriod('week')} type="button">Últimos 7 días</button><button onClick={() => selectPeriod('month')} type="button">Últimos 30 días</button><button onClick={() => selectPeriod('current-month')} type="button">Este mes</button><button onClick={() => selectPeriod('year')} type="button">Este año</button></div></div>

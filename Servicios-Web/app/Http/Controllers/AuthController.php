@@ -39,6 +39,10 @@ class AuthController extends Controller
             return response()->json(['message' => 'Credenciales incorrectas'], 401);
         }
 
+        if ($user->role !== 'admin' && $user->is_blocked) {
+            return response()->json(['message' => 'Tu cuenta está bloqueada. Contacta al administrador.'], 403);
+        }
+
         $token = $user->createToken('storefront')->plainTextToken;
 
         return response()->json([
@@ -62,7 +66,6 @@ class AuthController extends Controller
             return response()->json(['message' => 'Acceso exclusivo para el administrador'], 403);
         }
 
-        $user->tokens()->where('name', 'admin-panel')->delete();
         $token = $user->createToken('admin-panel')->plainTextToken;
 
         return response()->json([

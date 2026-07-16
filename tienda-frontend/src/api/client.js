@@ -1,4 +1,10 @@
-const API_URL = (import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api').replace(/\/$/, '');
+const API_URL = (import.meta.env.VITE_API_URL || '/api').replace(/\/$/, '');
+
+function expireSession() {
+  localStorage.removeItem('store_token');
+  localStorage.removeItem('store_user');
+  window.dispatchEvent(new Event('store:unauthenticated'));
+}
 
 export class ApiError extends Error {
   constructor(message, status, errors = {}) {
@@ -42,8 +48,12 @@ export async function apiRequest(path, options = {}) {
   const data = await response.json().catch(() => ({}));
 
   if (!response.ok) {
+    if (response.status === 401 && token) expireSession();
     const validationMessage = data.errors ? Object.values(data.errors).flat().join(' ') : '';
-    throw new ApiError(data.message || validationMessage || 'Ocurrió un error en el servidor.', response.status, data.errors);
+    const message = data.message === 'Unauthenticated.'
+      ? 'Tu sesión venció. Inicia sesión nuevamente.'
+      : data.message || validationMessage || 'Ocurrió un error en el servidor.';
+    throw new ApiError(message, response.status, data.errors);
   }
 
   return data;
@@ -66,7 +76,11 @@ export async function apiDownload(path, fallbackFilename = 'reporte.csv') {
 
   if (!response.ok) {
     const data = await response.json().catch(() => ({}));
-    throw new ApiError(data.message || 'No se pudo generar el reporte.', response.status, data.errors);
+    if (response.status === 401 && token) expireSession();
+    const message = data.message === 'Unauthenticated.'
+      ? 'Tu sesión venció. Inicia sesión nuevamente.'
+      : data.message || 'No se pudo generar el reporte.';
+    throw new ApiError(message, response.status, data.errors);
   }
 
   const disposition = response.headers.get('content-disposition') || '';
