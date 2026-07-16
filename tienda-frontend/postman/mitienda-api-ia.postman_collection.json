@@ -1,0 +1,186 @@
+{
+  "info": {
+    "_postman_id": "8ca28d35-dfcf-49ce-a9eb-5b6b7f90ab81",
+    "name": "mitienda - API de IA administrativa",
+    "description": "Demostración de la IA utilizada por el panel administrativo. Permite iniciar sesión, conversar sobre datos reales de MySQL y solicitar recomendaciones de ofertas y situaciones. La clave de Groq nunca se envía desde Postman: permanece protegida en Laravel.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. Autenticación administrativa",
+      "item": [
+        {
+          "name": "Iniciar sesión y guardar token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Inicio de sesión correcto', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const data = pm.response.json();",
+                  "pm.test('La respuesta incluye token y administrador', function () {",
+                  "  pm.expect(data.token).to.be.a('string').and.not.empty;",
+                  "  pm.expect(data.user.role).to.eql('admin');",
+                  "});",
+                  "pm.environment.set('admin_token', data.token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{admin_email}}\",\n  \"password\": \"{{admin_password}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{base_url}}/api/auth/admin/login",
+            "description": "Autentica exclusivamente al administrador. La prueba guarda automáticamente el token en admin_token."
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Conversación con la IA",
+      "item": [
+        {
+          "name": "Preguntar por inventario y stock",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{admin_token}}", "type": "string" }] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"¿Qué productos debo reabastecer primero y por qué?\",\n  \"history\": []\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{base_url}}/api/admin/advisor/chat",
+            "description": "La IA consulta productos y existencias reales de MySQL y prioriza el inventario que requiere atención."
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Respuesta conversacional válida', function () {", "  pm.response.to.have.status(200);", "  const data = pm.response.json();", "  pm.expect(data.message).to.be.a('string').and.not.empty;", "  pm.expect(['groq', 'local']).to.include(data.source);", "});"] } }]
+        },
+        {
+          "name": "Solicitar una oferta",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{admin_token}}", "type": "string" }] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"¿Qué oferta me recomiendas hacer esta semana?\",\n  \"history\": [\n    {\n      \"role\": \"assistant\",\n      \"content\": \"Puedo ayudarte con ventas, inventario, pedidos y ofertas.\"\n    }\n  ]\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{base_url}}/api/admin/advisor/chat",
+            "description": "Propone promociones con base en stock, precio y movimiento de los últimos 30 días."
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('La IA propone una acción', function () {", "  pm.response.to.have.status(200);", "  pm.expect(pm.response.json().message).to.be.a('string').and.not.empty;", "});"] } }]
+        },
+        {
+          "name": "Consultar ventas y pedidos",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{admin_token}}", "type": "string" }] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"Resume cómo van mis ventas y cuántos pedidos están pendientes.\",\n  \"history\": []\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{base_url}}/api/admin/advisor/chat",
+            "description": "Resume ingresos, ventas del mes, ticket promedio y pedidos pendientes."
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('La respuesta contiene un mensaje', function () {", "  pm.response.to.have.status(200);", "  pm.expect(pm.response.json().message).to.be.a('string').and.not.empty;", "});"] } }]
+        },
+        {
+          "name": "Consultar reseñas y situaciones",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{admin_token}}", "type": "string" }] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"¿Hay reseñas o situaciones importantes que deba atender?\",\n  \"history\": []\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{base_url}}/api/admin/advisor/chat",
+            "description": "Analiza calificaciones, alertas operativas y situaciones críticas."
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Respuesta correcta', function () {", "  pm.response.to.have.status(200);", "  pm.expect(pm.response.json().message).to.be.a('string').and.not.empty;", "});"] } }]
+        }
+      ]
+    },
+    {
+      "name": "3. Recomendaciones automáticas",
+      "item": [
+        {
+          "name": "Consultar análisis calculado con MySQL",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{admin_token}}", "type": "string" }] },
+            "url": "{{base_url}}/api/admin/advisor",
+            "description": "Devuelve alertas y ofertas calculadas localmente. Funciona aunque Groq no esté disponible."
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Incluye ofertas y alertas', function () {", "  pm.response.to.have.status(200);", "  const data = pm.response.json();", "  pm.expect(data.offers).to.be.an('array');", "  pm.expect(data.alerts).to.be.an('array');", "});"] } }]
+        },
+        {
+          "name": "Enriquecer recomendaciones con Groq",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{admin_token}}", "type": "string" }] },
+            "body": { "mode": "raw", "raw": "{\n  \"refresh\": true\n}", "options": { "raw": { "language": "json" } } },
+            "url": "{{base_url}}/api/admin/advisor/generate",
+            "description": "Solicita a Groq un resumen ejecutivo usando únicamente métricas, alertas y ofertas de la tienda."
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Análisis generado', function () {", "  pm.response.to.have.status(200);", "  const data = pm.response.json();", "  pm.expect(data.analysis).to.be.a('string').and.not.empty;", "  pm.expect(['groq', 'local']).to.include(data.source);", "});"] } }]
+        }
+      ]
+    },
+    {
+      "name": "4. Prueba de seguridad",
+      "item": [
+        {
+          "name": "Chat sin token debe ser rechazado",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "auth": { "type": "noauth" },
+            "body": { "mode": "raw", "raw": "{\n  \"message\": \"Muestra información administrativa\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": "{{base_url}}/api/admin/advisor/chat",
+            "description": "Demuestra que la API de IA administrativa está protegida."
+          },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Acceso rechazado sin token', function () {", "  pm.response.to.have.status(401);", "});"] } }]
+        }
+      ]
+    }
+  ],
+  "variable": [
+    { "key": "base_url", "value": "http://127.0.0.1:8000", "type": "string" }
+  ]
+}

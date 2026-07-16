@@ -1,0 +1,43 @@
+# Secrets and local configuration
+**/.env
+**/.env.*
+!**/.env.example
+**/auth.json
+
+# Dependencies and generated builds
+**/node_modules/
+**/vendor/
+**/dist/
+**/dist-ssr/
+**/public/build/
+**/public/hot
+**/public/storage
+
+# Runtime files and caches
+**/*.log
+**/.phpunit.cache/
+**/.phpunit.result.cache
+**/storage/*.key
+**/storage/pail/
+**/*.sqlite
+**/*.sqlite3
+**/*.db
+
+# Postman local workspace metadata (keep collection/environment JSON files)
+**/.postman/
+tienda-frontend/postman/postman/
+
+# Editor and agent metadata
+**/.agents/
+**/.codex/
+**/.cursor/
+**/.idea/
+**/.vscode/
+**/.zed/
+**/.DS_Store
+**/Thumbs.db
+
+# Miscellaneous local files
+**/*.local
+**/*.swp
+**/*.swo
