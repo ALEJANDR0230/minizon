@@ -66,7 +66,7 @@ un script que este repositorio deba incluir.
 | Builder | Railpack |
 | Build Command | Sin override; usar detección de Railpack |
 | Start Command | Sin override; usar FrankenPHP de Railpack |
-| Pre-deploy Command | `php artisan migrate --force` |
+| Pre-deploy Commands | `php artisan config:clear`, después `php artisan migrate --force` |
 | Healthcheck | `/up` |
 
 Railway no aplica automáticamente el Root Directory a la ubicación de
@@ -176,9 +176,12 @@ distinto de `MySQL`, sustituir ese nombre en las referencias `${{...}}`.
 
 ### Migraciones
 
-El pre-deploy autorizado es:
+El pre-deploy autorizado limpia primero el caché de configuración creado
+durante el build. Esto permite que las referencias de MySQL proporcionadas en
+el entorno de despliegue sustituyan correctamente los valores predeterminados:
 
 ```bash
+php artisan config:clear
 php artisan migrate --force
 ```
 
