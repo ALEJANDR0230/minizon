@@ -1,5 +1,15 @@
 const API_URL = (import.meta.env.VITE_API_URL || '/api').replace(/\/$/, '');
 
+export function resolveMediaUrl(value) {
+  if (!value || !value.startsWith('/')) return value;
+
+  try {
+    return `${new URL(API_URL, window.location.origin).origin}${value}`;
+  } catch {
+    return value;
+  }
+}
+
 function expireSession() {
   localStorage.removeItem('store_token');
   localStorage.removeItem('store_user');
