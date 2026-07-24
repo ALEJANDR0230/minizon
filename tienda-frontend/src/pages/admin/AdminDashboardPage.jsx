@@ -27,7 +27,8 @@ export default function AdminDashboardPage() {
   const firstName = user?.name?.split(' ')[0] || 'Administrador';
   const cards = [
     ['Ventas este mes', formatCurrency(metrics.revenue_month), '/admin/reportes', 'Ingresos confirmados'],
-    ['Pedidos por atender', metrics.pending_orders ?? 0, '/admin/pedidos', 'Pendientes de revisión'],
+    ['Pagos pendientes', metrics.pending_payment_orders ?? 0, '/admin/pedidos', 'Aún no preparar'],
+    ['Pagados por preparar', metrics.ready_to_ship_orders ?? 0, '/admin/pedidos', 'Listos para envío'],
     ['Clientes móviles', metrics.mobile_customers ?? 0, '/admin/clientes-moviles', 'Cuentas de la app'],
     ['Unidades en inventario', metrics.inventory_units ?? 0, '/admin/productos', 'Productos activos'],
     ['Reseñas', metrics.reviews ?? 0, '/admin/resenas', 'Opiniones recibidas'],
@@ -37,11 +38,18 @@ export default function AdminDashboardPage() {
   const outOfStockCount = lowStockProducts.filter((product) => Number(product.stock) === 0).length;
   const monitoringItems = [
     {
-      label: 'Pedidos pendientes',
-      value: metrics.pending_orders ?? 0,
-      detail: Number(metrics.pending_orders) > 0 ? 'Requieren seguimiento' : 'Operación al día',
+      label: 'Pendientes de pago',
+      value: metrics.pending_payment_orders ?? 0,
+      detail: Number(metrics.pending_payment_orders) > 0 ? 'Esperando confirmación' : 'Sin pagos pendientes',
       path: '/admin/pedidos',
-      tone: Number(metrics.pending_orders) > 0 ? 'warning' : 'ok',
+      tone: Number(metrics.pending_payment_orders) > 0 ? 'warning' : 'ok',
+    },
+    {
+      label: 'Pagados por preparar',
+      value: metrics.ready_to_ship_orders ?? 0,
+      detail: Number(metrics.ready_to_ship_orders) > 0 ? 'Preparar y enviar' : 'Sin pedidos en espera',
+      path: '/admin/pedidos',
+      tone: Number(metrics.ready_to_ship_orders) > 0 ? 'critical' : 'ok',
     },
     {
       label: 'Inventario crítico',
@@ -128,6 +136,10 @@ export default function AdminDashboardPage() {
       </section>
 
       <section className="dashboard-grid">
+        <article className="admin-panel recent-payments-panel">
+          <div className="panel-heading"><div><h2>Pagos confirmados recientes</h2><p>Pedidos que ya pueden prepararse.</p></div><Link to="/admin/pedidos">Abrir pedidos</Link></div>
+          {data?.recent_paid_orders?.length ? <div className="compact-list">{data.recent_paid_orders.map((order) => <div key={order.id}><span><strong>Pedido #{order.id}</strong><small>{order.user?.name || 'Cliente móvil'} · {order.payment_reference || 'Sin referencia'}</small></span><span><strong>{formatCurrency(order.total)}</strong><StatusBadge status={order.status} /></span></div>)}</div> : <p className="muted panel-empty">Todavía no hay pagos confirmados.</p>}
+        </article>
         <article className="admin-panel">
           <div className="panel-heading"><div><h2>Pedidos recientes</h2><p>Últimos movimientos registrados.</p></div><Link to="/admin/pedidos">Ver todos</Link></div>
           {data?.recent_orders?.length ? <div className="compact-list">{data.recent_orders.map((order) => <div key={order.id}><span><strong>Pedido #{order.id}</strong><small>{order.user?.name || 'Cliente móvil'}</small></span><span><strong>{formatCurrency(order.total)}</strong><StatusBadge status={order.status} /></span></div>)}</div> : <p className="muted panel-empty">Todavía no hay pedidos.</p>}

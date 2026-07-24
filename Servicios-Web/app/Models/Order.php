@@ -13,15 +13,27 @@ class Order extends Model
     protected $fillable = [
         'user_id',
         'status',
+        'payment_method',
+        'payment_reference',
         'total',
         'customer_name',
         'shipping_address',
         'notes',
+        'paid_at',
+        'shipped_at',
+        'delivered_at',
+        'cancelled_at',
     ];
 
     protected function casts(): array
     {
-        return ['total' => 'decimal:2'];
+        return [
+            'total' => 'decimal:2',
+            'paid_at' => 'datetime',
+            'shipped_at' => 'datetime',
+            'delivered_at' => 'datetime',
+            'cancelled_at' => 'datetime',
+        ];
     }
 
     public function user(): BelongsTo
@@ -32,5 +44,10 @@ class Order extends Model
     public function items(): HasMany
     {
         return $this->hasMany(OrderItem::class);
+    }
+
+    public function history(): HasMany
+    {
+        return $this->hasMany(OrderStatusHistory::class)->latest();
     }
 }

@@ -8,6 +8,9 @@ pnpm-debug.log*
 lerna-debug.log*
 
 node_modules
+.flutter_appdata/
+.ssh_known_hosts
+/deploy-payment/
 dist
 dist-ssr
 *.local

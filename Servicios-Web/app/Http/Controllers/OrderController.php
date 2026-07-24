@@ -10,6 +10,14 @@ use Illuminate\Validation\Rule;
 
 class OrderController extends Controller
 {
+    private const TRANSITIONS = [
+        'pending' => ['paid', 'cancelled'],
+        'paid' => ['shipped', 'cancelled'],
+        'shipped' => ['delivered'],
+        'delivered' => [],
+        'cancelled' => [],
+    ];
+
     public function index(Request $request)
     {
         return response()->json(
@@ -23,9 +31,11 @@ class OrderController extends Controller
     public function adminIndex()
     {
         return response()->json(
-            Order::with(['user:id,name,email', 'items.product:id,name,image_url'])
-                ->latest()
-                ->get()
+            Order::with([
+                'user:id,name,email',
+                'items.product:id,name,image_url',
+                'history.actor:id,name',
+            ])->latest()->get()
         );
     }
 
@@ -33,7 +43,11 @@ class OrderController extends Controller
     {
         abort_unless($request->user()->role === 'admin' || $order->user_id === $request->user()->id, 403);
 
-        return response()->json($order->load(['user:id,name,email', 'items.product:id,name,image_url']));
+        return response()->json($order->load([
+            'user:id,name,email',
+            'items.product:id,name,image_url',
+            'history.actor:id,name',
+        ]));
     }
 
     public function store(Request $request)
@@ -54,8 +68,8 @@ class OrderController extends Controller
             $total = 0;
 
             foreach ($data['items'] as $item) {
-                $product = Product::query()->lockForUpdate()->findOrFail($item['product_id']);
-                abort_unless($product->is_active, 422, "El producto {$product->name} ya no está disponible");
+                $product = Product::query()->findOrFail($item['product_id']);
+                abort_unless($product->is_active, 422, "El producto {$product->name} ya no esta disponible");
 
                 if ($product->stock < $item['quantity']) {
                     abort(422, "Stock insuficiente para {$product->name}");
@@ -64,7 +78,6 @@ class OrderController extends Controller
                 $unitPrice = (float) $product->price;
                 $subtotal = round($unitPrice * $item['quantity'], 2);
                 $total = round($total + $subtotal, 2);
-
                 $preparedItems[] = [
                     'product_id' => $product->id,
                     'product_name' => $product->name,
@@ -72,52 +85,156 @@ class OrderController extends Controller
                     'quantity' => $item['quantity'],
                     'subtotal' => $subtotal,
                 ];
-
-                $product->decrement('stock', $item['quantity']);
             }
 
             $order = $request->user()->orders()->create([
                 'status' => 'pending',
+                'payment_method' => 'oxxo',
                 'total' => $total,
                 'customer_name' => $data['customer_name'],
                 'shipping_address' => $data['shipping_address'],
                 'notes' => $data['notes'] ?? null,
             ]);
-
+            $order->update([
+                'payment_reference' => sprintf('MZ-%08d-%04d', $order->id, ((int) round($total)) % 10000),
+            ]);
             $order->items()->createMany($preparedItems);
+            $this->recordHistory($order, $request->user()->id, null, 'pending', 'Pedido creado; esperando pago');
 
             return $order;
         });
 
         return response()->json(
-            $order->load(['user:id,name,email', 'items.product:id,name,image_url']),
+            $order->fresh()->load(['items.product:id,name,image_url']),
             201,
         );
+    }
+
+    public function confirmPayment(Request $request, Order $order)
+    {
+        abort_unless($order->user_id === $request->user()->id, 403);
+
+        $paidOrder = DB::transaction(function () use ($request, $order) {
+            $lockedOrder = Order::query()->lockForUpdate()->findOrFail($order->id);
+
+            if ($lockedOrder->status === 'paid') {
+                return $lockedOrder;
+            }
+
+            abort_unless($lockedOrder->status === 'pending', 422, 'Este pedido ya no admite confirmacion de pago');
+            $this->deductInventory($lockedOrder);
+            $lockedOrder->update(['status' => 'paid', 'paid_at' => now()]);
+            $this->recordHistory(
+                $lockedOrder,
+                $request->user()->id,
+                'pending',
+                'paid',
+                'Pago OXXO confirmado desde la aplicacion',
+            );
+
+            return $lockedOrder;
+        });
+
+        return response()->json([
+            'message' => 'Pago confirmado e inventario actualizado',
+            'order' => $paidOrder->fresh()->load(['items.product:id,name,image_url']),
+        ]);
     }
 
     public function updateStatus(Request $request, Order $order)
     {
         $data = $request->validate([
             'status' => ['required', Rule::in(Order::STATUSES)],
+            'note' => ['nullable', 'string', 'max:500'],
         ]);
 
-        if ($order->status === 'cancelled' && $data['status'] !== 'cancelled') {
-            return response()->json(['message' => 'Un pedido cancelado no se puede reactivar'], 422);
-        }
+        $updatedOrder = DB::transaction(function () use ($request, $order, $data) {
+            $lockedOrder = Order::query()->lockForUpdate()->findOrFail($order->id);
+            $from = $lockedOrder->status;
+            $to = $data['status'];
 
-        DB::transaction(function () use ($order, $data) {
-            if ($data['status'] === 'cancelled' && $order->status !== 'cancelled') {
-                $order->load('items');
-                foreach ($order->items as $item) {
-                    if ($item->product_id) {
-                        Product::whereKey($item->product_id)->increment('stock', $item->quantity);
-                    }
-                }
+            if ($from === $to) {
+                return $lockedOrder;
             }
 
-            $order->update(['status' => $data['status']]);
+            abort_unless(
+                in_array($to, self::TRANSITIONS[$from] ?? [], true),
+                422,
+                "No se puede cambiar un pedido de {$from} a {$to}",
+            );
+
+            if ($to === 'paid') {
+                $this->deductInventory($lockedOrder);
+            }
+
+            if ($to === 'cancelled' && $from === 'paid') {
+                $this->restoreInventory($lockedOrder);
+            }
+
+            $timestamps = match ($to) {
+                'paid' => ['paid_at' => now()],
+                'shipped' => ['shipped_at' => now()],
+                'delivered' => ['delivered_at' => now()],
+                'cancelled' => ['cancelled_at' => now()],
+                default => [],
+            };
+            $lockedOrder->update(['status' => $to, ...$timestamps]);
+            $this->recordHistory(
+                $lockedOrder,
+                $request->user()->id,
+                $from,
+                $to,
+                $data['note'] ?? null,
+            );
+
+            return $lockedOrder;
         });
 
-        return response()->json($order->fresh()->load(['user:id,name,email', 'items.product:id,name,image_url']));
+        return response()->json($updatedOrder->fresh()->load([
+            'user:id,name,email',
+            'items.product:id,name,image_url',
+            'history.actor:id,name',
+        ]));
+    }
+
+    private function deductInventory(Order $order): void
+    {
+        $order->load('items');
+
+        foreach ($order->items as $item) {
+            abort_unless($item->product_id, 422, "El producto {$item->product_name} ya no esta disponible");
+            $product = Product::query()->lockForUpdate()->find($item->product_id);
+            abort_unless($product && $product->is_active, 422, "El producto {$item->product_name} ya no esta disponible");
+
+            if ($product->stock < $item->quantity) {
+                abort(422, "Stock insuficiente para {$item->product_name}");
+            }
+            $product->decrement('stock', $item->quantity);
+        }
+    }
+
+    private function restoreInventory(Order $order): void
+    {
+        $order->load('items');
+        foreach ($order->items as $item) {
+            if ($item->product_id) {
+                Product::whereKey($item->product_id)->increment('stock', $item->quantity);
+            }
+        }
+    }
+
+    private function recordHistory(
+        Order $order,
+        ?int $actorId,
+        ?string $from,
+        string $to,
+        ?string $note = null,
+    ): void {
+        $order->history()->create([
+            'actor_id' => $actorId,
+            'from_status' => $from,
+            'to_status' => $to,
+            'note' => $note,
+        ]);
     }
 }

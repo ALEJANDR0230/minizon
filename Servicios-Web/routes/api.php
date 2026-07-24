@@ -27,15 +27,16 @@ Route::get('categories/{category}', [CategoryController::class, 'show']);
 Route::get('products', [ProductController::class, 'index']);
 Route::get('products/{product}', [ProductController::class, 'show']);
 Route::get('products/{product}/reviews', [ReviewController::class, 'productIndex']);
-Route::post('ai/chat', [AiController::class, 'chat'])->middleware('throttle:6,1');
-
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('auth/me', [AuthController::class, 'me']);
     Route::post('auth/logout', [AuthController::class, 'logout']);
+    Route::post('ai/chat', [AiController::class, 'chat'])->middleware('throttle:6,1');
 
     Route::get('orders', [OrderController::class, 'index']);
     Route::post('orders', [OrderController::class, 'store']);
     Route::get('orders/{order}', [OrderController::class, 'show']);
+    Route::post('orders/{order}/confirm-payment', [OrderController::class, 'confirmPayment'])
+        ->middleware('throttle:10,1');
 
     Route::post('products/{product}/reviews', [ReviewController::class, 'store'])->can('purchase-products');
     Route::put('reviews/{review}', [ReviewController::class, 'update']);
@@ -59,6 +60,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('categories/{category}', [CategoryController::class, 'destroy']);
 
         Route::get('products', [ProductController::class, 'adminIndex']);
+        Route::post('products/upload-image', [ProductController::class, 'uploadImage']);
         Route::post('products', [ProductController::class, 'store']);
         Route::put('products/{product}', [ProductController::class, 'update']);
         Route::delete('products/{product}', [ProductController::class, 'destroy']);

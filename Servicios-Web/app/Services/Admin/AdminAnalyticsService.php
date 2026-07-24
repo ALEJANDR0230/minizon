@@ -15,10 +15,10 @@ class AdminAnalyticsService
 {
     public function dashboard(): array
     {
-        $revenueQuery = Order::query()->where('status', '!=', 'cancelled');
+        $revenueQuery = Order::query()->whereIn('status', ['paid', 'shipped', 'delivered']);
         $trendStart = now()->subDays(13)->startOfDay();
         $trendRows = Order::query()
-            ->where('status', '!=', 'cancelled')
+            ->whereIn('status', ['paid', 'shipped', 'delivered'])
             ->where('created_at', '>=', $trendStart)
             ->selectRaw('DATE(created_at) as day, SUM(total) as total, COUNT(*) as orders_count')
             ->groupByRaw('DATE(created_at)')
@@ -75,7 +75,7 @@ class AdminAnalyticsService
 
         $topProducts = OrderItem::query()
             ->join('orders', 'orders.id', '=', 'order_items.order_id')
-            ->where('orders.status', '!=', 'cancelled')
+            ->whereIn('orders.status', ['paid', 'shipped', 'delivered'])
             ->select([
                 'order_items.product_id',
                 'order_items.product_name',
@@ -103,6 +103,8 @@ class AdminAnalyticsService
                 'categories' => Category::count(),
                 'orders' => Order::count(),
                 'pending_orders' => Order::where('status', 'pending')->count(),
+                'pending_payment_orders' => Order::where('status', 'pending')->count(),
+                'ready_to_ship_orders' => Order::where('status', 'paid')->count(),
                 'reviews' => ProductReview::count(),
                 'revenue' => round((float) (clone $revenueQuery)->sum('total'), 2),
                 'revenue_month' => round((float) (clone $revenueQuery)
@@ -121,6 +123,11 @@ class AdminAnalyticsService
             'top_products' => $topProducts,
             'alerts' => $alerts->values(),
             'recent_orders' => Order::with('user:id,name,email')->latest()->limit(5)->get(),
+            'recent_paid_orders' => Order::with('user:id,name,email')
+                ->whereNotNull('paid_at')
+                ->latest('paid_at')
+                ->limit(5)
+                ->get(),
             'low_stock_products' => Product::where('is_active', true)
                 ->where('stock', '<=', 5)
                 ->orderBy('stock')
@@ -155,8 +162,18 @@ class AdminAnalyticsService
         if ($oldPending > 0) {
             $alerts->push([
                 'severity' => 'critical',
-                'title' => 'Pedidos pendientes atrasados',
+                'title' => 'Pagos pendientes vencidos',
                 'message' => "Hay {$oldPending} pedido(s) con más de 48 horas sin atender.",
+                'path' => '/admin/pedidos',
+            ]);
+        }
+
+        $readyToShip = Order::query()->where('status', 'paid')->count();
+        if ($readyToShip > 0) {
+            $alerts->push([
+                'severity' => 'info',
+                'title' => 'Pagos nuevos por preparar',
+                'message' => "Hay {$readyToShip} pedido(s) pagado(s) listos para envio.",
                 'path' => '/admin/pedidos',
             ]);
         }
@@ -186,7 +203,7 @@ class AdminAnalyticsService
     public function reportSummary(Carbon $from, Carbon $to): array
     {
         $orders = Order::query()->whereBetween('created_at', [$from, $to]);
-        $validOrders = (clone $orders)->where('status', '!=', 'cancelled');
+        $validOrders = (clone $orders)->whereIn('status', ['paid', 'shipped', 'delivered']);
         $orderIds = (clone $validOrders)->pluck('id');
 
         $topProducts = OrderItem::query()

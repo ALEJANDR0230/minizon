@@ -37,7 +37,11 @@ class AdminReportController extends Controller
             fwrite($output, "\xEF\xBB\xBF");
 
             if ($type === 'sales') {
-                fputcsv($output, ['Pedido', 'Fecha', 'Cliente móvil', 'Estado', 'Total', 'Artículos']);
+                fputcsv($output, [
+                    'Pedido', 'Fecha', 'Cliente móvil', 'Correo', 'Estado', 'Método de pago',
+                    'Referencia de pago', 'Fecha de pago', 'Total', 'Artículos',
+                    'Persona que recibe', 'Dirección', 'Referencias de entrega',
+                ]);
                 Order::with(['user:id,name,email', 'items:id,order_id,quantity'])
                     ->whereBetween('created_at', [$from, $to])
                     ->orderByDesc('created_at')
@@ -46,10 +50,17 @@ class AdminReportController extends Controller
                             fputcsv($output, [
                                 $order->id,
                                 $order->created_at?->format('Y-m-d H:i'),
-                                $this->safeCsv($order->user?->email ?? $order->customer_name),
+                                $this->safeCsv($order->user?->name ?? $order->customer_name),
+                                $this->safeCsv($order->user?->email),
                                 $order->status,
+                                $order->payment_method,
+                                $this->safeCsv($order->payment_reference),
+                                $order->paid_at?->format('Y-m-d H:i'),
                                 number_format((float) $order->total, 2, '.', ''),
                                 $order->items->sum('quantity'),
+                                $this->safeCsv($order->customer_name),
+                                $this->safeCsv($order->shipping_address),
+                                $this->safeCsv($order->notes),
                             ]);
                         }
                     });

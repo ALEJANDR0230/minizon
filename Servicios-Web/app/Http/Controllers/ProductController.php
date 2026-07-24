@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Storage;
 
 class ProductController extends Controller
 {
@@ -68,6 +69,9 @@ class ProductController extends Controller
     public function update(Request $request, Product $product)
     {
         $data = $this->validatedData($request, $product);
+        if (array_key_exists('image_url', $data) && $data['image_url'] !== $product->image_url) {
+            $this->deleteUploadedImage($product->image_url);
+        }
         $product->update($data);
 
         return response()->json($product->fresh()->load('category:id,name,slug'));
@@ -75,9 +79,24 @@ class ProductController extends Controller
 
     public function destroy(Product $product)
     {
+        $this->deleteUploadedImage($product->image_url);
         $product->delete();
 
         return response()->json(['message' => 'Producto eliminado correctamente']);
+    }
+
+    public function uploadImage(Request $request)
+    {
+        $data = $request->validate([
+            'image' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+        ]);
+
+        $path = $data['image']->store('products', 'public');
+
+        return response()->json([
+            'message' => 'Imagen subida correctamente',
+            'image_url' => '/storage/'.$path,
+        ], 201);
     }
 
     private function validatedData(Request $request, ?Product $product = null): array
@@ -91,8 +110,17 @@ class ProductController extends Controller
             'price' => [$required, 'numeric', 'min:0', 'max:99999999.99'],
             'stock' => [$required, 'integer', 'min:0'],
             'description' => ['nullable', 'string', 'max:3000'],
-            'image_url' => ['nullable', 'url', 'max:1000'],
+            'image_url' => ['nullable', 'string', 'max:1000'],
             'is_active' => ['sometimes', 'boolean'],
         ]);
+    }
+
+    private function deleteUploadedImage(?string $imageUrl): void
+    {
+        if (! $imageUrl || ! str_starts_with($imageUrl, '/storage/products/')) {
+            return;
+        }
+
+        Storage::disk('public')->delete(str_replace('/storage/', '', $imageUrl));
     }
 }

@@ -1,4 +1,6 @@
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { apiRequest } from '../api/client';
 import { useAuth } from '../hooks/useAuth';
 
 const links = [
@@ -15,6 +17,17 @@ const links = [
 export default function AdminLayout() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const [readyToShip, setReadyToShip] = useState(0);
+
+  useEffect(() => {
+    let active = true;
+    const refresh = () => apiRequest('/admin/dashboard', { timeoutMs: 7000 })
+      .then((data) => active && setReadyToShip(Number(data?.metrics?.ready_to_ship_orders || 0)))
+      .catch(() => {});
+    refresh();
+    const timer = window.setInterval(refresh, 30000);
+    return () => { active = false; window.clearInterval(timer); };
+  }, []);
 
   async function closeSession() {
     await logout();
@@ -35,7 +48,10 @@ export default function AdminLayout() {
       <div className="admin-content">
         <header className="admin-topbar">
           <div><small>Panel privado</small><strong>{user?.name || 'Administrador'}</strong></div>
-          <span className="role-badge">Administrador</span>
+          <div className="topbar-actions">
+            {readyToShip > 0 && <Link className="payment-alert-badge" to="/admin/pedidos"><i />{readyToShip} pago{readyToShip === 1 ? '' : 's'} por preparar</Link>}
+            <span className="role-badge">Administrador</span>
+          </div>
         </header>
         <main className="admin-main"><Outlet /></main>
       </div>

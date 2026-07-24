@@ -20,7 +20,7 @@ class AppServiceProvider extends ServiceProvider
         });
 
         Gate::define('purchase-products', function (User $user) {
-            return in_array($user->role, ['buyer', 'user'], true);
+            return ! $user->is_blocked && in_array($user->role, ['buyer', 'user'], true);
         });
     }
 }

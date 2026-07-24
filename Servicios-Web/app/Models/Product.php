@@ -28,6 +28,23 @@ class Product extends Model
         ];
     }
 
+    public function getImageUrlAttribute(?string $value): ?string
+    {
+        if (! $value) {
+            return null;
+        }
+
+        $parts = parse_url($value);
+        $localHosts = ['localhost', '127.0.0.1', '::1'];
+        $path = $parts['path'] ?? '';
+
+        if (in_array($parts['host'] ?? '', $localHosts, true) && str_starts_with($path, '/storage/')) {
+            return $path;
+        }
+
+        return $value;
+    }
+
     public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class);

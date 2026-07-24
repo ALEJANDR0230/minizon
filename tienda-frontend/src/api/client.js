@@ -96,4 +96,32 @@ export async function apiDownload(path, fallbackFilename = 'reporte.csv') {
   URL.revokeObjectURL(url);
 }
 
+export async function apiUpload(path, file) {
+  const token = localStorage.getItem('store_token');
+  const form = new FormData();
+  form.append('image', file);
+
+  let response;
+  try {
+    response = await fetch(`${API_URL}${path.startsWith('/') ? path : `/${path}`}`, {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: form,
+    });
+  } catch {
+    throw new ApiError(`No se pudo conectar con el servidor (${API_URL}).`, 0);
+  }
+
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    if (response.status === 401 && token) expireSession();
+    const validationMessage = data.errors ? Object.values(data.errors).flat().join(' ') : '';
+    throw new ApiError(data.message || validationMessage || 'No se pudo subir la imagen.', response.status, data.errors);
+  }
+  return data;
+}
+
 export { API_URL };
