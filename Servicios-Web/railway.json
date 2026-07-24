@@ -5,8 +5,7 @@
   },
   "deploy": {
     "preDeployCommand": [
-      "php artisan config:clear",
-      "php artisan migrate --force"
+      "php artisan config:clear && php artisan migrate --force"
     ],
     "healthcheckPath": "/up",
     "healthcheckTimeout": 300,
