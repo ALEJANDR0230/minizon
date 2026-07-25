@@ -28,8 +28,8 @@ RUN composer dump-autoload --no-dev --optimize --no-interaction
 FROM php:8.3-fpm-bookworm
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends nginx libcurl4-openssl-dev \
-    && docker-php-ext-install curl pdo_mysql pdo_sqlite \
+    && apt-get install -y --no-install-recommends nginx libsqlite3-dev \
+    && docker-php-ext-install pdo_mysql pdo_sqlite \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /var/www/html
