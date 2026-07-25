@@ -35,8 +35,8 @@ RUN apt-get update \
 WORKDIR /var/www/html
 
 COPY --from=vendor /app /var/www/html
-COPY docker/azure-nginx.conf /etc/nginx/sites-available/default
-COPY docker/azure-entrypoint.sh /usr/local/bin/minizon-entrypoint
+COPY Servicios-Web/docker/azure-nginx.conf /etc/nginx/sites-available/default
+COPY Servicios-Web/docker/azure-entrypoint.sh /usr/local/bin/minizon-entrypoint
 
 RUN chmod +x /usr/local/bin/minizon-entrypoint \
     && mkdir -p \
