@@ -1,0 +1,42 @@
+name: Build Minizon image
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - codex/azure-deployment
+    paths:
+      - ".github/workflows/build-minizon-image.yml"
+      - ".dockerignore"
+      - "Servicios-Web/**"
+      - "tienda-frontend/package.json"
+      - "tienda-frontend/package-lock.json"
+      - "tienda-frontend/index.html"
+      - "tienda-frontend/src/**"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Login to Azure Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: minizon9513registry.azurecr.io
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
+
+      - name: Build and push production image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Servicios-Web/Dockerfile.azure
+          push: true
+          tags: |
+            minizon9513registry.azurecr.io/minizon-api:latest
+            minizon9513registry.azurecr.io/minizon-api:${{ github.sha }}

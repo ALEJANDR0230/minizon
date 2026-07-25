@@ -1,0 +1,15 @@
+.git
+**/.env
+**/.env.*
+**/node_modules
+**/vendor
+**/dist
+**/build
+**/.dart_tool
+**/.flutter_appdata
+**/.idea
+**/*.sqlite
+**/*.db
+**/*.log
+Servicios-Web/tests
+tienda-frontend/minizon

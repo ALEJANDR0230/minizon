@@ -1,0 +1,52 @@
+FROM node:22-alpine AS frontend
+
+WORKDIR /frontend
+
+COPY tienda-frontend/package.json tienda-frontend/package-lock.json ./
+RUN npm ci
+
+COPY tienda-frontend/ ./
+RUN npm run build
+
+FROM composer:2 AS vendor
+
+WORKDIR /app
+
+COPY Servicios-Web/composer.json Servicios-Web/composer.lock ./
+RUN composer install \
+    --no-dev \
+    --no-interaction \
+    --no-scripts \
+    --prefer-dist \
+    --optimize-autoloader
+
+COPY Servicios-Web/ ./
+COPY --from=frontend /frontend/dist/index.html /app/public/index.html
+COPY --from=frontend /frontend/dist/assets /app/public/assets
+RUN composer dump-autoload --no-dev --optimize --no-interaction
+
+FROM php:8.3-fpm-bookworm
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends nginx libcurl4-openssl-dev \
+    && docker-php-ext-install curl pdo_mysql pdo_sqlite \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /var/www/html
+
+COPY --from=vendor /app /var/www/html
+COPY docker/azure-nginx.conf /etc/nginx/sites-available/default
+COPY docker/azure-entrypoint.sh /usr/local/bin/minizon-entrypoint
+
+RUN chmod +x /usr/local/bin/minizon-entrypoint \
+    && mkdir -p \
+        storage/framework/cache/data \
+        storage/framework/sessions \
+        storage/framework/views \
+        storage/logs \
+        bootstrap/cache \
+    && chown -R www-data:www-data storage bootstrap/cache
+
+EXPOSE 8080
+
+ENTRYPOINT ["minizon-entrypoint"]
