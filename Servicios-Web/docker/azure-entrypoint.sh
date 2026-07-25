@@ -18,6 +18,7 @@ chown -R www-data:www-data \
 
 php artisan migrate --force
 php artisan package:discover --ansi
+php artisan minizon:ensure-admin
 
 php-fpm -D
 exec nginx -g "daemon off;"
