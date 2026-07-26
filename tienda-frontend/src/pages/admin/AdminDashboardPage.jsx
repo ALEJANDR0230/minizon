@@ -27,7 +27,7 @@ export default function AdminDashboardPage() {
   const firstName = user?.name?.split(' ')[0] || 'Administrador';
   const cards = [
     ['Ventas este mes', formatCurrency(metrics.revenue_month), '/admin/reportes', 'Ingresos confirmados'],
-    ['Pagos pendientes', metrics.pending_payment_orders ?? 0, '/admin/pedidos', 'Aún no preparar'],
+    ['OXXO por validar', metrics.oxxo_review_orders ?? 0, '/admin/pedidos', 'Revisar comprobantes'],
     ['Pagados por preparar', metrics.ready_to_ship_orders ?? 0, '/admin/pedidos', 'Listos para envío'],
     ['Clientes móviles', metrics.mobile_customers ?? 0, '/admin/clientes-moviles', 'Cuentas de la app'],
     ['Unidades en inventario', metrics.inventory_units ?? 0, '/admin/productos', 'Productos activos'],
@@ -38,11 +38,11 @@ export default function AdminDashboardPage() {
   const outOfStockCount = lowStockProducts.filter((product) => Number(product.stock) === 0).length;
   const monitoringItems = [
     {
-      label: 'Pendientes de pago',
-      value: metrics.pending_payment_orders ?? 0,
-      detail: Number(metrics.pending_payment_orders) > 0 ? 'Esperando confirmación' : 'Sin pagos pendientes',
+      label: 'OXXO por validar',
+      value: metrics.oxxo_review_orders ?? 0,
+      detail: Number(metrics.oxxo_review_orders) > 0 ? 'Revisar y aprobar pagos' : 'Sin comprobantes pendientes',
       path: '/admin/pedidos',
-      tone: Number(metrics.pending_payment_orders) > 0 ? 'warning' : 'ok',
+      tone: Number(metrics.oxxo_review_orders) > 0 ? 'warning' : 'ok',
     },
     {
       label: 'Pagados por preparar',

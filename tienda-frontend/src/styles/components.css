@@ -29,6 +29,21 @@
 .product-card-footer strong { font-size: 19px; }
 .product-card-footer small { margin-top: 2px; font-size: 11px; }
 
+.app-dialog-backdrop { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; padding: 20px; background: rgba(17, 29, 24, .58); backdrop-filter: blur(5px); }
+.app-dialog { width: min(460px, 100%); padding: 28px; border: 1px solid rgba(255,255,255,.7); border-radius: 22px; background: #fff; box-shadow: 0 28px 90px rgba(16, 30, 24, .3); animation: dialog-in .18s ease-out; }
+.app-dialog-icon { display: grid; width: 46px; height: 46px; margin-bottom: 16px; place-items: center; border-radius: 15px; color: #fff; background: var(--brand); font-size: 22px; font-weight: 900; }
+.app-dialog-icon.is-danger { background: #c74747; }
+.app-dialog h2 { margin: 0 0 9px; font-size: 23px; }
+.app-dialog > p { margin: 0 0 20px; color: var(--muted); line-height: 1.55; }
+.app-dialog label { display: grid; gap: 7px; margin-top: 18px; font-size: 12px; font-weight: 800; }
+.app-dialog textarea { min-height: 95px; resize: vertical; }
+.app-dialog-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px; }
+.button-danger { color: #fff; background: #b93636; }
+.button-danger:hover { background: #982d2d; }
+@keyframes dialog-in { from { opacity: 0; transform: translateY(8px) scale(.98); } }
+.password-dialog label { margin-top: 12px; }
+.password-dialog input { width: 100%; }
+
 .status { display: inline-flex; width: max-content; align-items: center; padding: 4px 8px; border-radius: 99px; font-size: 11px; font-weight: 800; white-space: nowrap; }
 .status-pending { color: #7c5e18; background: #fff2ca; }
 .status-paid { color: #205d67; background: #dff1f3; }

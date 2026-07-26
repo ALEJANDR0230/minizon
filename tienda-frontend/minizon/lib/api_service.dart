@@ -165,6 +165,7 @@ class ApiService {
   Future<StoreOrder> createOrder({
     required String customerName,
     required String address,
+    required String paymentMethod,
     String? notes,
     required List<CartLine> lines,
   }) async => StoreOrder.fromJson(
@@ -176,6 +177,7 @@ class ApiService {
             body: {
               'customer_name': customerName,
               'shipping_address': address,
+              'payment_method': paymentMethod,
               'notes': notes,
               'items': lines
                   .map(

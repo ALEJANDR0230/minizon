@@ -104,6 +104,10 @@ class AdminAnalyticsService
                 'orders' => Order::count(),
                 'pending_orders' => Order::where('status', 'pending')->count(),
                 'pending_payment_orders' => Order::where('status', 'pending')->count(),
+                'oxxo_review_orders' => Order::where('status', 'pending')
+                    ->where('payment_method', 'oxxo')
+                    ->whereNotNull('payment_reported_at')
+                    ->count(),
                 'ready_to_ship_orders' => Order::where('status', 'paid')->count(),
                 'reviews' => ProductReview::count(),
                 'revenue' => round((float) (clone $revenueQuery)->sum('total'), 2),

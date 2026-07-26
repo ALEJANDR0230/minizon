@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { apiDownload, apiRequest } from '../../api/client';
+import ActionDialog from '../../components/ui/ActionDialog';
 import Message from '../../components/ui/Message';
 import PageHeader from '../../components/ui/PageHeader';
 import StatusBadge from '../../components/ui/StatusBadge';
@@ -24,6 +25,7 @@ export default function AdminOrdersPage() {
   const [copyLabel, setCopyLabel] = useState('Copiar dirección');
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
+  const [pendingChange, setPendingChange] = useState(null);
 
   useEffect(() => { load(); }, []);
 
@@ -37,11 +39,13 @@ export default function AdminOrdersPage() {
     }
   }
 
-  async function changeStatus(order, status) {
+  function changeStatus(order, status) {
     if (status === order.status) return;
-    if (status === 'cancelled' && !window.confirm(`¿Cancelar el pedido #${order.id}? Si ya fue pagado, el inventario se devolverá.`)) return;
-    const note = window.prompt('Nota para el historial (opcional):', '') ?? null;
-    if (note === null) return;
+    setPendingChange({ order, status });
+  }
+
+  async function applyStatus(note) {
+    const { order, status } = pendingChange;
     setUpdatingId(order.id);
     setError('');
     setMessage('');
@@ -53,6 +57,7 @@ export default function AdminOrdersPage() {
       setOrders((current) => current.map((item) => item.id === order.id ? updated : item));
       setSelectedOrder((current) => current?.id === order.id ? updated : current);
       setMessage(`Pedido #${order.id}: ${labels[status]}.`);
+      setPendingChange(null);
     } catch (reason) {
       setError(reason.message);
     } finally {
@@ -76,7 +81,7 @@ export default function AdminOrdersPage() {
     const searchable = `${order.id} ${order.user?.name || ''} ${order.user?.email || ''} ${products} ${order.shipping_address || ''} ${order.payment_reference || ''}`.toLocaleLowerCase('es');
     return searchable.includes(query) && (statusFilter === 'all' || order.status === statusFilter);
   });
-  const pendingPayment = orders.filter((order) => order.status === 'pending').length;
+  const reportedOxxo = orders.filter((order) => order.status === 'pending' && order.payment_method === 'oxxo' && order.payment_reported_at).length;
   const readyToShip = orders.filter((order) => order.status === 'paid').length;
   const newPayments = orders.filter((order) => order.paid_at && Date.now() - new Date(order.paid_at).getTime() < 86400000).length;
 
@@ -91,7 +96,7 @@ export default function AdminOrdersPage() {
       <Message type="success">{message}</Message><Message type="error">{error}</Message>
 
       <section className="order-summary-grid">
-        <article><small>Pendientes de pago</small><strong>{pendingPayment}</strong><span>No preparar todavía</span></article>
+        <article><small>OXXO por verificar</small><strong>{reportedOxxo}</strong><span>Revisar comprobante y aprobar</span></article>
         <article className="is-paid"><small>Pagados por preparar</small><strong>{readyToShip}</strong><span>Inventario descontado</span></article>
         <article><small>Pagos últimas 24 h</small><strong>{newPayments}</strong><span>Nuevas confirmaciones</span></article>
       </section>
@@ -110,7 +115,7 @@ export default function AdminOrdersPage() {
                 <td><strong>#{order.id}</strong><small>{formatDate(order.created_at)}</small></td>
                 <td><strong>{order.user?.name || order.customer_name}</strong><small>{order.user?.email}</small></td>
                 <td><div className="item-summary">{order.items.map((item) => <span key={item.id}>{item.quantity} × {item.product_name}</span>)}</div></td>
-                <td><StatusBadge status={order.status} /><small>{order.payment_reference || 'Sin referencia'}</small></td>
+                <td><StatusBadge status={order.status} /><small>{paymentLabel(order)}</small><small>{order.payment_reference || 'Sin referencia'}</small></td>
                 <td><strong>{formatCurrency(order.total)}</strong></td>
                 <td>
                   <select
@@ -179,10 +184,34 @@ export default function AdminOrdersPage() {
           </section>
         </div>
       )}
+      <ActionDialog
+        busy={updatingId === pendingChange?.order?.id}
+        confirmLabel={pendingChange?.status === 'paid' ? 'Aprobar pago' : 'Actualizar pedido'}
+        danger={pendingChange?.status === 'cancelled'}
+        description={pendingChange ? statusChangeDescription(pendingChange.order, pendingChange.status) : ''}
+        noteLabel="Referencia para el historial (opcional)"
+        notePlaceholder="Ejemplo: comprobante revisado, pago correcto"
+        onCancel={() => setPendingChange(null)}
+        onConfirm={applyStatus}
+        open={Boolean(pendingChange)}
+        title={pendingChange?.status === 'paid' ? 'Validar pago OXXO' : `Actualizar pedido #${pendingChange?.order?.id || ''}`}
+      />
     </>
   );
 }
 
 function formatOptionalDate(value) {
   return value ? formatDate(value, { dateStyle: 'medium', timeStyle: 'short' }) : '—';
+}
+
+function paymentLabel(order) {
+  if (order.payment_method === 'card') return order.status === 'paid' ? 'Tarjeta autorizada' : 'Tarjeta pendiente';
+  if (order.payment_reported_at && order.status === 'pending') return 'OXXO reportado · requiere aprobación';
+  return order.status === 'pending' ? 'OXXO · esperando pago' : 'OXXO validado';
+}
+
+function statusChangeDescription(order, status) {
+  if (status === 'paid') return `Confirma que revisaste el pago OXXO del pedido #${order.id}. Al aprobarlo se descontará el inventario.`;
+  if (status === 'cancelled') return `Se cancelará el pedido #${order.id}. Si estaba pagado, el inventario se devolverá.`;
+  return `El pedido #${order.id} cambiará a “${labels[status]}”.`;
 }

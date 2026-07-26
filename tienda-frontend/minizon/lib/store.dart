@@ -89,10 +89,12 @@ class StoreState extends ChangeNotifier {
     String name,
     String address,
     String notes,
+    String paymentMethod,
   ) async {
     final order = await api.createOrder(
       customerName: name.trim(),
       address: address.trim(),
+      paymentMethod: paymentMethod,
       notes: notes.trim().isEmpty ? null : notes.trim(),
       lines: cart.values.toList(),
     );

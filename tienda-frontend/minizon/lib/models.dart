@@ -138,6 +138,7 @@ class StoreOrder {
     required this.paymentReference,
     required this.createdAt,
     required this.paidAt,
+    required this.paymentReportedAt,
     required this.items,
   });
 
@@ -150,6 +151,7 @@ class StoreOrder {
   final String? paymentReference;
   final DateTime? createdAt;
   final DateTime? paidAt;
+  final DateTime? paymentReportedAt;
   final List<OrderLine> items;
 
   factory StoreOrder.fromJson(Map<String, dynamic> json) => StoreOrder(
@@ -162,6 +164,9 @@ class StoreOrder {
     paymentReference: json['payment_reference']?.toString(),
     createdAt: DateTime.tryParse(json['created_at']?.toString() ?? ''),
     paidAt: DateTime.tryParse(json['paid_at']?.toString() ?? ''),
+    paymentReportedAt: DateTime.tryParse(
+      json['payment_reported_at']?.toString() ?? '',
+    ),
     items: (json['items'] as List? ?? const [])
         .whereType<Map>()
         .map((item) => OrderLine.fromJson(Map<String, dynamic>.from(item)))

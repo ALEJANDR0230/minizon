@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { apiRequest, apiUpload } from '../../api/client';
+import ActionDialog from '../../components/ui/ActionDialog';
 import Message from '../../components/ui/Message';
 import PageHeader from '../../components/ui/PageHeader';
 
@@ -19,6 +20,8 @@ export default function AdminProductsPage() {
   const [visibilityFilter, setVisibilityFilter] = useState('all');
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => { load(); }, []);
 
@@ -116,14 +119,21 @@ export default function AdminProductsPage() {
     }
   }
 
-  async function remove(product) {
-    if (!window.confirm(`¿Eliminar “${product.name}”? Esta acción también eliminará su imagen subida.`)) return;
+  function remove(product) {
+    setDeleteTarget(product);
+  }
+
+  async function confirmRemove(product) {
+    setDeleting(true);
     try {
       await apiRequest(`/admin/products/${product.id}`, { method: 'DELETE' });
       setMessage('Producto eliminado.');
+      setDeleteTarget(null);
       await load();
     } catch (reason) {
       setError(reason.message);
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -189,6 +199,16 @@ export default function AdminProductsPage() {
           <div className="form-actions"><button className="button button-primary" disabled={saving} type="submit">{saving ? 'Guardando…' : editingId ? 'Guardar cambios' : 'Crear producto'}</button>{editingId && <button className="button button-ghost" onClick={reset} type="button">Cancelar</button>}</div>
         </form>
       </div>
+      <ActionDialog
+        busy={deleting}
+        confirmLabel="Eliminar producto"
+        danger
+        description={deleteTarget ? `Se eliminará “${deleteTarget.name}” y su imagen subida. Esta acción no se puede deshacer.` : ''}
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={() => confirmRemove(deleteTarget)}
+        open={Boolean(deleteTarget)}
+        title="¿Eliminar producto?"
+      />
     </>
   );
 }

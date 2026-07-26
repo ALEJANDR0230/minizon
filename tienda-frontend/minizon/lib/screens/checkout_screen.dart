@@ -22,6 +22,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   String? selectedPlace;
   bool searchingPostal = false;
   bool busy = false;
+  String paymentMethod = 'oxxo';
 
   @override
   void didChangeDependencies() {
@@ -81,9 +82,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
     setState(() => busy = true);
     try {
-      final order = await StoreScope.of(
-        context,
-      ).createPendingOrder(name.text, fullAddress, references.text);
+      final order = await StoreScope.of(context).createPendingOrder(
+        name.text,
+        fullAddress,
+        references.text,
+        paymentMethod,
+      );
       if (!mounted) return;
       Navigator.pushReplacement(
         context,
@@ -297,6 +301,27 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               ),
             ),
             const SizedBox(height: 22),
+            Text(
+              'Método de pago',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            const SizedBox(height: 10),
+            _PaymentMethodTile(
+              selected: paymentMethod == 'oxxo',
+              icon: Icons.storefront_outlined,
+              title: 'Efectivo en OXXO',
+              subtitle: 'Recibe un QR. El administrador validará tu pago.',
+              onTap: () => setState(() => paymentMethod = 'oxxo'),
+            ),
+            const SizedBox(height: 10),
+            _PaymentMethodTile(
+              selected: paymentMethod == 'card',
+              icon: Icons.credit_card,
+              title: 'Tarjeta',
+              subtitle: 'Autorización inmediata dentro de Minizon.',
+              onTap: () => setState(() => paymentMethod = 'card'),
+            ),
+            const SizedBox(height: 22),
             FilledButton.icon(
               onPressed: busy || postalAddress == null ? null : submit,
               icon: busy
@@ -308,8 +333,18 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                         color: Colors.white,
                       ),
                     )
-                  : const Icon(Icons.qr_code_2),
-              label: Text(busy ? 'Generando referencia…' : 'Continuar al pago'),
+                  : Icon(
+                      paymentMethod == 'oxxo'
+                          ? Icons.qr_code_2
+                          : Icons.lock_outline,
+                    ),
+              label: Text(
+                busy
+                    ? 'Preparando pago…'
+                    : paymentMethod == 'oxxo'
+                    ? 'Generar referencia OXXO'
+                    : 'Continuar con tarjeta',
+              ),
             ),
             const SizedBox(height: 12),
             const Text(
@@ -322,4 +357,62 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       ),
     );
   }
+}
+
+class _PaymentMethodTile extends StatelessWidget {
+  const _PaymentMethodTile({
+    required this.selected,
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  final bool selected;
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => Material(
+    color: selected ? const Color(0xFFDCECE5) : Colors.white,
+    shape: RoundedRectangleBorder(
+      side: BorderSide(
+        color: selected ? primary : const Color(0xFFE1E4DF),
+        width: selected ? 2 : 1,
+      ),
+      borderRadius: BorderRadius.circular(17),
+    ),
+    child: InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(17),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Icon(icon, color: selected ? primary : ink),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(fontWeight: FontWeight.w900),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(subtitle, style: const TextStyle(fontSize: 12)),
+                ],
+              ),
+            ),
+            Icon(
+              selected ? Icons.radio_button_checked : Icons.radio_button_off,
+              color: selected ? primary : const Color(0xFF9AA39F),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
 }

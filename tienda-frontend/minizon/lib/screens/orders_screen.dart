@@ -141,7 +141,13 @@ class OrderCard extends StatelessWidget {
   final StoreOrder order;
   @override
   Widget build(BuildContext context) {
-    final status = statusInfo(order.status);
+    final status = order.paymentReportedAt != null && order.status == 'pending'
+        ? (
+            'Pago OXXO en revisión',
+            Colors.amber.shade800,
+            Icons.fact_check_outlined,
+          )
+        : statusInfo(order.status);
     final date = order.createdAt == null
         ? ''
         : '${order.createdAt!.day}/${order.createdAt!.month}/${order.createdAt!.year}';
@@ -190,7 +196,8 @@ class OrderCard extends StatelessWidget {
                   'Entrega: ${order.shippingAddress}',
                   style: const TextStyle(fontSize: 12),
                 ),
-                if (order.status == 'pending') ...[
+                if (order.status == 'pending' &&
+                    order.paymentReportedAt == null) ...[
                   const SizedBox(height: 14),
                   SizedBox(
                     width: double.infinity,
@@ -201,8 +208,16 @@ class OrderCard extends StatelessWidget {
                           builder: (_) => PaymentScreen(order: order),
                         ),
                       ),
-                      icon: const Icon(Icons.qr_code_2),
-                      label: const Text('Ver QR y pagar'),
+                      icon: Icon(
+                        order.paymentMethod == 'card'
+                            ? Icons.credit_card
+                            : Icons.qr_code_2,
+                      ),
+                      label: Text(
+                        order.paymentMethod == 'card'
+                            ? 'Completar pago con tarjeta'
+                            : 'Ver QR y pagar',
+                      ),
                     ),
                   ),
                 ],

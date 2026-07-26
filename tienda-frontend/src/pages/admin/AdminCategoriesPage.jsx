@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { apiRequest } from '../../api/client';
+import ActionDialog from '../../components/ui/ActionDialog';
 import Message from '../../components/ui/Message';
 import PageHeader from '../../components/ui/PageHeader';
 
@@ -13,6 +14,8 @@ export default function AdminCategoriesPage() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => { load(); }, []);
   async function load() { try { setCategories(await apiRequest('/admin/categories')); } catch (reason) { setError(reason.message); } }
@@ -27,9 +30,13 @@ export default function AdminCategoriesPage() {
     } catch (reason) { setError(reason.message); }
   }
 
-  async function remove(item) {
-    if (!window.confirm(`¿Eliminar la categoría “${item.name}”?`)) return;
-    try { await apiRequest(`/admin/categories/${item.id}`, { method: 'DELETE' }); setMessage('Categoría eliminada.'); await load(); } catch (reason) { setError(reason.message); }
+  function remove(item) {
+    setDeleteTarget(item);
+  }
+
+  async function confirmRemove(item) {
+    setDeleting(true);
+    try { await apiRequest(`/admin/categories/${item.id}`, { method: 'DELETE' }); setMessage('Categoría eliminada.'); setDeleteTarget(null); await load(); } catch (reason) { setError(reason.message); } finally { setDeleting(false); }
   }
 
   const query = search.trim().toLocaleLowerCase('es');
@@ -56,6 +63,16 @@ export default function AdminCategoriesPage() {
         </section>
         <form className="admin-panel editor-form" onSubmit={submit}><div><h2>{editingId ? 'Editar categoría' : 'Nueva categoría'}</h2></div><label>Nombre<input required value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} /></label><label>Slug <small>(opcional)</small><input value={form.slug} onChange={(event) => setForm((current) => ({ ...current, slug: event.target.value }))} placeholder="se-genera-automaticamente" /></label><label>Descripción<textarea value={form.description} onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))} /></label><label className="check-field"><input checked={form.is_active} onChange={(event) => setForm((current) => ({ ...current, is_active: event.target.checked }))} type="checkbox" /> Visible en la tienda</label><div className="form-actions"><button className="button button-primary" type="submit">{editingId ? 'Guardar cambios' : 'Crear categoría'}</button>{editingId && <button className="button button-ghost" onClick={reset} type="button">Cancelar</button>}</div></form>
       </div>
+      <ActionDialog
+        busy={deleting}
+        confirmLabel="Eliminar categoría"
+        danger
+        description={deleteTarget ? `Se eliminará “${deleteTarget.name}”. Esta acción no se puede deshacer.` : ''}
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={() => confirmRemove(deleteTarget)}
+        open={Boolean(deleteTarget)}
+        title="¿Eliminar categoría?"
+      />
     </>
   );
 }

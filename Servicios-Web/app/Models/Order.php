@@ -20,6 +20,7 @@ class Order extends Model
         'shipping_address',
         'notes',
         'paid_at',
+        'payment_reported_at',
         'shipped_at',
         'delivered_at',
         'cancelled_at',
@@ -30,6 +31,7 @@ class Order extends Model
         return [
             'total' => 'decimal:2',
             'paid_at' => 'datetime',
+            'payment_reported_at' => 'datetime',
             'shipped_at' => 'datetime',
             'delivered_at' => 'datetime',
             'cancelled_at' => 'datetime',

@@ -30,6 +30,8 @@ Route::get('products/{product}/reviews', [ReviewController::class, 'productIndex
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('auth/me', [AuthController::class, 'me']);
     Route::post('auth/logout', [AuthController::class, 'logout']);
+    Route::post('auth/change-password', [AuthController::class, 'changePassword'])
+        ->middleware('throttle:5,1');
     Route::post('ai/chat', [AiController::class, 'chat'])->middleware('throttle:6,1');
 
     Route::get('orders', [OrderController::class, 'index']);

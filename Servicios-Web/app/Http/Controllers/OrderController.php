@@ -58,6 +58,7 @@ class OrderController extends Controller
             'customer_name' => ['required', 'string', 'max:120'],
             'shipping_address' => ['required', 'string', 'max:1000'],
             'notes' => ['nullable', 'string', 'max:1000'],
+            'payment_method' => ['required', Rule::in(['oxxo', 'card'])],
             'items' => ['required', 'array', 'min:1'],
             'items.*.product_id' => ['required', 'integer', 'distinct', 'exists:products,id'],
             'items.*.quantity' => ['required', 'integer', 'min:1', 'max:100'],
@@ -89,14 +90,19 @@ class OrderController extends Controller
 
             $order = $request->user()->orders()->create([
                 'status' => 'pending',
-                'payment_method' => 'oxxo',
+                'payment_method' => $data['payment_method'],
                 'total' => $total,
                 'customer_name' => $data['customer_name'],
                 'shipping_address' => $data['shipping_address'],
                 'notes' => $data['notes'] ?? null,
             ]);
             $order->update([
-                'payment_reference' => sprintf('MZ-%08d-%04d', $order->id, ((int) round($total)) % 10000),
+                'payment_reference' => sprintf(
+                    '%s-%08d-%04d',
+                    $data['payment_method'] === 'card' ? 'CARD-MZ' : 'MZ',
+                    $order->id,
+                    ((int) round($total)) % 10000,
+                ),
             ]);
             $order->items()->createMany($preparedItems);
             $this->recordHistory($order, $request->user()->id, null, 'pending', 'Pedido creado; esperando pago');
@@ -117,11 +123,25 @@ class OrderController extends Controller
         $paidOrder = DB::transaction(function () use ($request, $order) {
             $lockedOrder = Order::query()->lockForUpdate()->findOrFail($order->id);
 
-            if ($lockedOrder->status === 'paid') {
+            if ($lockedOrder->status === 'paid' || $lockedOrder->payment_reported_at) {
                 return $lockedOrder;
             }
 
             abort_unless($lockedOrder->status === 'pending', 422, 'Este pedido ya no admite confirmacion de pago');
+
+            if ($lockedOrder->payment_method === 'oxxo') {
+                $lockedOrder->update(['payment_reported_at' => now()]);
+                $this->recordHistory(
+                    $lockedOrder,
+                    $request->user()->id,
+                    'pending',
+                    'pending',
+                    'El cliente reporto el pago OXXO; pendiente de validacion administrativa',
+                );
+
+                return $lockedOrder;
+            }
+
             $this->deductInventory($lockedOrder);
             $lockedOrder->update(['status' => 'paid', 'paid_at' => now()]);
             $this->recordHistory(
@@ -129,14 +149,16 @@ class OrderController extends Controller
                 $request->user()->id,
                 'pending',
                 'paid',
-                'Pago OXXO confirmado desde la aplicacion',
+                'Pago con tarjeta autorizado automaticamente',
             );
 
             return $lockedOrder;
         });
 
         return response()->json([
-            'message' => 'Pago confirmado e inventario actualizado',
+            'message' => $paidOrder->status === 'paid'
+                ? 'Pago con tarjeta autorizado e inventario actualizado'
+                : 'Pago OXXO reportado; el administrador debe validarlo',
             'order' => $paidOrder->fresh()->load(['items.product:id,name,image_url']),
         ]);
     }
