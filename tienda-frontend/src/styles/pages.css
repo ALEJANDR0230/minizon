@@ -403,9 +403,17 @@
 }
 
 /* Pedidos, pagos e imágenes */
-.topbar-actions { display: flex; align-items: center; gap: 12px; }
-.payment-alert-badge { display: inline-flex; align-items: center; gap: 7px; padding: 7px 11px; border-radius: 999px; color: #71530b; background: #fff2bd; font-size: 11px; font-weight: 850; }
-.payment-alert-badge i { width: 7px; height: 7px; border-radius: 50%; background: #e1a514; box-shadow: 0 0 0 4px rgba(225,165,20,.14); }
+.topbar-actions { display: flex; align-items: stretch; justify-content: flex-end; gap: 9px; }
+.payment-alert-badge { min-width: 172px; display: flex; align-items: center; gap: 10px; padding: 9px 13px; border: 1px solid #f0d98a; border-radius: 12px; color: #624b0e; background: #fff9e8; text-decoration: none; transition: border-color .18s, transform .18s, box-shadow .18s; }
+.payment-alert-badge:hover { transform: translateY(-1px); border-color: #dfbb42; box-shadow: 0 8px 20px rgba(113, 83, 11, .1); }
+.payment-alert-badge i { width: 9px; height: 9px; flex: 0 0 9px; border-radius: 50%; background: #e1a514; box-shadow: 0 0 0 5px rgba(225,165,20,.13); }
+.payment-alert-badge span { display: grid; gap: 1px; }
+.payment-alert-badge small { color: #927629; font-size: 8px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+.payment-alert-badge b { font-size: 11px; font-weight: 850; white-space: nowrap; }
+.payment-alert-badge.is-ready { border-color: #bcded0; color: #1d5943; background: #eff9f4; }
+.payment-alert-badge.is-ready i { background: #3f9b74; box-shadow: 0 0 0 5px rgba(63,155,116,.12); }
+.payment-alert-badge.is-ready small { color: #5e8e78; }
+.admin-topbar .role-badge { align-self: center; padding: 8px 12px; border: 1px solid #cee3df; background: #edf6f4; white-space: nowrap; }
 .product-table-name { display: flex; align-items: center; gap: 11px; min-width: 220px; }
 .product-table-name > img, .product-table-name > span:first-child { width: 46px; height: 46px; flex: 0 0 46px; border-radius: 9px; object-fit: cover; background: #edf1ef; }
 .product-table-name > span:first-child { display: grid; place-items: center; color: var(--muted); }

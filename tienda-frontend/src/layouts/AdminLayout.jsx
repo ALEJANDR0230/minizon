@@ -54,10 +54,13 @@ export default function AdminLayout() {
       </aside>
       <div className="admin-content">
         <header className="admin-topbar">
-          <div><small>Panel privado</small><strong>{user?.name || 'Administrador'}</strong></div>
+          <div className="admin-identity">
+            <span className="admin-avatar" aria-hidden="true">{(user?.name || 'A').charAt(0).toUpperCase()}</span>
+            <div className="admin-identity-copy"><small>Panel privado</small><strong>{user?.name || 'Administrador'}</strong></div>
+          </div>
           <div className="topbar-actions">
-            {paymentReview > 0 && <Link className="payment-alert-badge" to="/admin/pedidos"><i />{paymentReview} OXXO por validar</Link>}
-            {readyToShip > 0 && <Link className="payment-alert-badge" to="/admin/pedidos"><i />{readyToShip} pago{readyToShip === 1 ? '' : 's'} por preparar</Link>}
+            {paymentReview > 0 && <Link className="payment-alert-badge is-review" to="/admin/pedidos"><i /><span><small>Requiere revisión</small><b>{paymentReview} OXXO por validar</b></span></Link>}
+            {readyToShip > 0 && <Link className="payment-alert-badge is-ready" to="/admin/pedidos"><i /><span><small>Listo para envío</small><b>{readyToShip} pago{readyToShip === 1 ? '' : 's'} por preparar</b></span></Link>}
             <span className="role-badge">Administrador</span>
           </div>
         </header>
