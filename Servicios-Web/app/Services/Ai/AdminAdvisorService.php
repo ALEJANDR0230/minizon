@@ -82,14 +82,17 @@ class AdminAdvisorService
 
         try {
             $response = Http::acceptJson()
-                ->withOptions(['curl' => [CURLOPT_RESOLVE => ['api.groq.com:443:104.18.38.236']]])
-                ->withToken($apiKey)
-                ->connectTimeout(2)
-                ->timeout(7)
+                ->when(
+                    $this->provider() === 'azure',
+                    fn ($client) => $client->withHeaders(['api-key' => $apiKey]),
+                    fn ($client) => $client->withToken($apiKey),
+                )
+                ->connectTimeout(5)
+                ->timeout(30)
                 ->post(config('services.groq.url'), [
                     'model' => config('services.groq.model'),
-                    'temperature' => 0.2,
-                    'max_completion_tokens' => 500,
+                    ...($this->provider() === 'azure' ? [] : ['temperature' => 0.2]),
+                    'max_completion_tokens' => 800,
                     'messages' => [
                         [
                             'role' => 'system',
@@ -105,7 +108,7 @@ class AdminAdvisorService
             $answer = trim((string) $response->json('choices.0.message.content'));
 
             if ($response->successful() && $answer !== '') {
-                $snapshot['source'] = 'groq';
+                $snapshot['source'] = $this->provider();
                 $snapshot['analysis'] = $answer;
                 return $snapshot;
             }
@@ -177,21 +180,24 @@ class AdminAdvisorService
 
         try {
             $response = Http::acceptJson()
-                ->withOptions(['curl' => [CURLOPT_RESOLVE => ['api.groq.com:443:104.18.38.236']]])
-                ->withToken($apiKey)
-                ->connectTimeout(2)
-                ->timeout(8)
+                ->when(
+                    $this->provider() === 'azure',
+                    fn ($client) => $client->withHeaders(['api-key' => $apiKey]),
+                    fn ($client) => $client->withToken($apiKey),
+                )
+                ->connectTimeout(5)
+                ->timeout(30)
                 ->post(config('services.groq.url'), [
                     'model' => config('services.groq.model'),
-                    'temperature' => 0.25,
-                    'max_completion_tokens' => 550,
+                    ...($this->provider() === 'azure' ? [] : ['temperature' => 0.25]),
+                    'max_completion_tokens' => 900,
                     'messages' => $messages,
                 ]);
 
             $answer = trim((string) $response->json('choices.0.message.content'));
 
             if ($response->successful() && $answer !== '') {
-                return ['message' => $answer, 'source' => 'groq', 'generated_at' => now()->toIso8601String()];
+                return ['message' => $answer, 'source' => $this->provider(), 'generated_at' => now()->toIso8601String()];
             }
 
             Log::warning('Admin chat request failed', [
@@ -208,6 +214,11 @@ class AdminAdvisorService
             'notice' => 'Respondí con los datos de la tienda porque el servicio externo no estuvo disponible.',
             'generated_at' => now()->toIso8601String(),
         ];
+    }
+
+    private function provider(): string
+    {
+        return (string) config('services.groq.provider', 'groq');
     }
 
     private function localChatAnswer(string $message, array $context): string

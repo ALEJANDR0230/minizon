@@ -100,22 +100,26 @@ class StoreAssistantOrchestrator
         $messages[] = ['role' => 'user', 'content' => $message];
 
         try {
-            $response = Http::acceptJson()
-                ->withOptions([
-                    'curl' => [
-                        CURLOPT_RESOLVE => ['api.groq.com:443:104.18.38.236'],
-                    ],
-                ])
-                ->withToken($apiKey)
-                ->connectTimeout(2)
-                ->timeout(8)
+            $request = Http::acceptJson()
+                ->connectTimeout(5)
+                ->timeout(30)
                 ->retry([150, 350], throw: false)
-                ->post(config('services.groq.url'), [
-                    'model' => config('services.groq.model'),
-                    'messages' => $messages,
-                    'temperature' => 0.25,
-                    'max_completion_tokens' => 350,
-                ]);
+                ->when(
+                    config('services.groq.provider') === 'azure',
+                    fn ($client) => $client->withHeaders(['api-key' => $apiKey]),
+                    fn ($client) => $client->withToken($apiKey),
+                );
+            $payload = [
+                'model' => config('services.groq.model'),
+                'messages' => $messages,
+                'max_completion_tokens' => 700,
+            ];
+
+            if (config('services.groq.provider') !== 'azure') {
+                $payload['temperature'] = 0.25;
+            }
+
+            $response = $request->post(config('services.groq.url'), $payload);
         } catch (ConnectionException $exception) {
             Log::warning('Groq assistant connection failed', ['message' => $exception->getMessage()]);
             throw new RuntimeException('No se pudo conectar con la IA en este momento.');
