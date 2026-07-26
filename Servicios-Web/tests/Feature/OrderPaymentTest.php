@@ -99,6 +99,15 @@ class OrderPaymentTest extends TestCase
             ->assertJsonPath('status', 'preparing');
 
         $this->actingAs($admin, 'sanctum')
+            ->getJson('/api/admin/dashboard')
+            ->assertOk()
+            ->assertJsonFragment([
+                'status' => 'preparing',
+                'label' => 'En preparación',
+                'value' => 1,
+            ]);
+
+        $this->actingAs($admin, 'sanctum')
             ->putJson("/api/admin/orders/{$orderId}/status", [
                 'status' => 'shipped',
                 'shipping_carrier' => 'Estafeta',

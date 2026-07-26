@@ -9,17 +9,11 @@ use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
-use RuntimeException;
-
 class StoreAssistantOrchestrator
 {
     public function chat(?User $user, string $message, array $history = []): array
     {
         $apiKey = config('services.groq.key');
-
-        if (! is_string($apiKey) || $apiKey === '') {
-            throw new RuntimeException('El asistente no esta configurado.');
-        }
 
         $products = Product::query()
             ->where('is_active', true)
@@ -29,6 +23,10 @@ class StoreAssistantOrchestrator
             ->orderBy('name')
             ->limit(40)
             ->get();
+
+        if (! is_string($apiKey) || $apiKey === '') {
+            return $this->localFallback($products);
+        }
 
         if ($this->isOrderQuestion($message)) {
             if (! $user) {
@@ -122,7 +120,7 @@ class StoreAssistantOrchestrator
             $response = $request->post(config('services.groq.url'), $payload);
         } catch (ConnectionException $exception) {
             Log::warning('Groq assistant connection failed', ['message' => $exception->getMessage()]);
-            throw new RuntimeException('No se pudo conectar con la IA en este momento.');
+            return $this->localFallback($products);
         }
 
         if (! $response->successful()) {
@@ -131,13 +129,13 @@ class StoreAssistantOrchestrator
                 'response' => Str::limit($response->body(), 500),
             ]);
 
-            throw new RuntimeException('La IA no esta disponible en este momento.');
+            return $this->localFallback($products);
         }
 
         $answer = trim((string) $response->json('choices.0.message.content'));
 
         if ($answer === '') {
-            throw new RuntimeException('La IA devolvio una respuesta vacia.');
+            return $this->localFallback($products);
         }
 
         return [
@@ -332,6 +330,37 @@ PROMPT;
         }
 
         return $this->productPayload($ranked->take(3)->pluck('product'));
+    }
+
+    private function localFallback(Collection $products): array
+    {
+        $recommended = $products
+            ->where('stock', '>', 0)
+            ->sortByDesc(fn (Product $product) => (
+                ((float) ($product->reviews_avg_rating ?? 0) * 1000000)
+                + ($product->reviews_count * 1000)
+                + $product->stock
+            ))
+            ->take(3)
+            ->values();
+
+        if ($recommended->isEmpty()) {
+            return [
+                'message' => 'Por ahora no hay productos con existencias. Puedes revisar el catálogo nuevamente más tarde.',
+                'suggested_products' => [],
+            ];
+        }
+
+        $names = $recommended->map(fn (Product $product) => sprintf(
+            '%s por $%s',
+            $product->name,
+            number_format((float) $product->price, 2),
+        ))->implode(', ');
+
+        return [
+            'message' => "Puedo recomendarte estas opciones disponibles: {$names}. El stock puede cambiar antes de finalizar la compra.",
+            'suggested_products' => $this->productPayload($recommended),
+        ];
     }
 
     private function productPayload(Collection $products): array

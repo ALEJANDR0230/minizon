@@ -15,10 +15,10 @@ class AdminAnalyticsService
 {
     public function dashboard(): array
     {
-        $revenueQuery = Order::query()->whereIn('status', ['paid', 'shipped', 'delivered']);
+        $revenueQuery = Order::query()->whereIn('status', ['paid', 'preparing', 'shipped', 'delivered']);
         $trendStart = now()->subDays(13)->startOfDay();
         $trendRows = Order::query()
-            ->whereIn('status', ['paid', 'shipped', 'delivered'])
+            ->whereIn('status', ['paid', 'preparing', 'shipped', 'delivered'])
             ->where('created_at', '>=', $trendStart)
             ->selectRaw('DATE(created_at) as day, SUM(total) as total, COUNT(*) as orders_count')
             ->groupByRaw('DATE(created_at)')
@@ -45,6 +45,7 @@ class AdminAnalyticsService
         $statusLabels = [
             'pending' => 'Pendientes',
             'paid' => 'Pagados',
+            'preparing' => 'En preparación',
             'shipped' => 'Enviados',
             'delivered' => 'Entregados',
             'cancelled' => 'Cancelados',
@@ -75,7 +76,7 @@ class AdminAnalyticsService
 
         $topProducts = OrderItem::query()
             ->join('orders', 'orders.id', '=', 'order_items.order_id')
-            ->whereIn('orders.status', ['paid', 'shipped', 'delivered'])
+            ->whereIn('orders.status', ['paid', 'preparing', 'shipped', 'delivered'])
             ->select([
                 'order_items.product_id',
                 'order_items.product_name',
@@ -169,7 +170,7 @@ class AdminAnalyticsService
                 'severity' => 'critical',
                 'title' => 'Pagos pendientes vencidos',
                 'message' => "Hay {$oldPending} pedido(s) con más de 48 horas sin atender.",
-                'path' => '/admin/pedidos',
+                'path' => '/admin/envios',
             ]);
         }
 
@@ -208,7 +209,7 @@ class AdminAnalyticsService
     public function reportSummary(Carbon $from, Carbon $to): array
     {
         $orders = Order::query()->whereBetween('created_at', [$from, $to]);
-        $validOrders = (clone $orders)->whereIn('status', ['paid', 'shipped', 'delivered']);
+        $validOrders = (clone $orders)->whereIn('status', ['paid', 'preparing', 'shipped', 'delivered']);
         $orderIds = (clone $validOrders)->pluck('id');
 
         $topProducts = OrderItem::query()
