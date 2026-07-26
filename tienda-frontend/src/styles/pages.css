@@ -473,12 +473,77 @@
 .shipping-form-grid { display: grid; grid-template-columns: 1fr 1.25fr; gap: 12px; }
 .shipping-dialog select, .shipping-dialog input { width: 100%; }
 
+.shipping-summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 18px; }
+.shipping-summary button { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 18px; border: 1px solid var(--line); border-radius: 13px; color: var(--ink); background: #fff; cursor: pointer; text-align: left; }
+.shipping-summary button:hover, .shipping-summary button.active { border-color: #73ad95; background: #eff8f4; box-shadow: 0 8px 22px rgba(24, 75, 58, .07); }
+.shipping-summary small { color: var(--muted); font-weight: 800; text-transform: uppercase; }
+.shipping-summary strong { font-size: 26px; }
+.shipping-control-panel { display: grid; gap: 18px; }
+.shipping-search { display: grid; grid-template-columns: auto minmax(220px, 440px); align-items: center; justify-content: end; gap: 12px; color: var(--muted); font-size: 11px; font-weight: 800; }
+.shipping-card-list { display: grid; gap: 14px; }
+.shipping-card { overflow: hidden; border: 1px solid var(--line); border-radius: 15px; background: #fff; }
+.shipping-card > header { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 16px 18px; border-bottom: 1px solid var(--line); }
+.shipping-card > header > div { display: grid; gap: 3px; }
+.shipping-card > header > div:last-child { justify-items: end; }
+.shipping-card > header small { color: var(--brand); font-size: 10px; font-weight: 850; text-transform: uppercase; }
+.shipping-card > header b { font-size: 18px; }
+.shipping-card .shipping-progress { border-bottom: 1px solid var(--line); }
+.shipping-card-body { display: grid; grid-template-columns: 1.2fr .8fr; gap: 16px; padding: 16px 18px; }
+.shipping-card-body > div { display: grid; gap: 4px; padding: 13px; border-radius: 10px; background: #f7f9f8; }
+.shipping-card-body small { color: var(--muted); font-size: 9px; font-weight: 850; letter-spacing: .08em; }
+.shipping-card-body span { color: var(--muted); font-size: 11px; }
+.shipping-card > footer { display: flex; align-items: center; justify-content: flex-end; gap: 9px; padding: 13px 18px; border-top: 1px solid var(--line); background: #fbfcfb; }
+.shipping-complete { color: #287154; font-size: 12px; font-weight: 850; }
+
+.receipt-backdrop { position: fixed; z-index: 1300; inset: 0; display: grid; place-items: center; padding: 22px; background: rgba(12, 25, 22, .68); backdrop-filter: blur(5px); }
+.order-receipt { width: min(760px, 100%); max-height: calc(100vh - 44px); overflow: auto; border-radius: 18px; background: #eef1ef; box-shadow: 0 30px 100px rgba(0,0,0,.32); }
+.receipt-toolbar { position: sticky; z-index: 2; top: 0; display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 13px 18px; color: #fff; background: var(--navy); }
+.receipt-toolbar > div { display: flex; align-items: center; gap: 10px; }
+.receipt-toolbar > div:first-child { display: grid; gap: 1px; }
+.receipt-toolbar small { color: #9bc4bb; font-size: 9px; font-weight: 800; text-transform: uppercase; }
+.receipt-toolbar button[aria-label] { width: 34px; height: 34px; border: 0; border-radius: 50%; color: #fff; background: rgba(255,255,255,.12); font-size: 22px; }
+.receipt-paper { margin: 18px; padding: 30px; background: #fff; box-shadow: 0 8px 28px rgba(24,39,33,.08); }
+.receipt-brand, .receipt-heading { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+.receipt-brand > div { display: grid; grid-template-columns: auto 1fr; align-items: center; column-gap: 9px; }
+.receipt-brand > div > span { grid-row: 1 / 3; width: 38px; height: 38px; display: grid; place-items: center; border-radius: 10px; color: #fff; background: var(--brand); font-weight: 900; }
+.receipt-brand small { color: var(--muted); font-size: 10px; text-transform: uppercase; }
+.receipt-paid-stamp { display: inline-flex; align-items: center; padding: 8px 13px; border: 1px solid #86efac; border-radius: 999px; color: #166534; background: #dcfce7; font-size: 11px; font-weight: 900; letter-spacing: .08em; }
+.receipt-heading { margin-top: 24px; padding: 18px 0; border-block: 1px solid var(--line); }
+.receipt-heading > div { display: grid; gap: 3px; }
+.receipt-heading > div:last-child { justify-items: end; text-align: right; }
+.receipt-heading small, .receipt-info small { color: var(--muted); font-size: 9px; font-weight: 850; letter-spacing: .08em; }
+.receipt-heading h2 { margin: 0; font-size: 22px; }
+.receipt-info { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding: 20px 0; }
+.receipt-info > div { display: grid; align-content: start; gap: 4px; }
+.receipt-info span { color: var(--muted); font-size: 11px; line-height: 1.45; }
+.receipt-items { margin-top: 4px; }
+.receipt-items th:last-child, .receipt-items td:last-child { text-align: right; }
+.receipt-total { display: flex; align-items: center; justify-content: flex-end; gap: 24px; padding: 20px 10px; border-bottom: 2px solid var(--ink); }
+.receipt-total span { font-weight: 800; }
+.receipt-total strong { font-size: 25px; }
+.receipt-paper > footer { display: flex; justify-content: space-between; padding-top: 15px; color: var(--muted); font-size: 10px; }
+
 @media (max-width: 760px) {
   .payment-alert-badge { max-width: 170px; }
   .order-summary-grid, .order-detail-grid { grid-template-columns: 1fr; }
   .shipping-form-grid { grid-template-columns: 1fr; }
+  .shipping-summary { grid-template-columns: 1fr 1fr; }
+  .shipping-search { grid-template-columns: 1fr; justify-content: stretch; }
+  .shipping-card-body, .receipt-info { grid-template-columns: 1fr; }
+  .shipping-card > footer { align-items: stretch; flex-direction: column; }
+  .receipt-backdrop { padding: 0; }
+  .order-receipt { max-height: 100vh; min-height: 100vh; border-radius: 0; }
+  .receipt-paper { margin: 0; padding: 22px 16px; box-shadow: none; }
   .shipping-progress { padding-inline: 12px; }
   .shipping-progress span { font-size: 9px; }
   .order-modal-backdrop { padding: 0; }
   .order-detail-modal { max-height: 100vh; min-height: 100vh; border-radius: 0; }
+}
+
+@media print {
+  body * { visibility: hidden !important; }
+  .receipt-backdrop, .receipt-backdrop * { visibility: visible !important; }
+  .receipt-backdrop { position: absolute; inset: 0; display: block; padding: 0; background: #fff; }
+  .order-receipt { width: 100%; max-height: none; overflow: visible; border-radius: 0; box-shadow: none; }
+  .receipt-paper { margin: 0; padding: 20px; box-shadow: none; }
 }

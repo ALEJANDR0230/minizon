@@ -28,8 +28,8 @@ export default function AdminDashboardPage() {
   const cards = [
     ['Ventas este mes', formatCurrency(metrics.revenue_month), '/admin/reportes', 'Ingresos confirmados'],
     ['OXXO por validar', metrics.oxxo_review_orders ?? 0, '/admin/pedidos', 'Revisar comprobantes'],
-    ['Pagados por preparar', metrics.ready_to_ship_orders ?? 0, '/admin/pedidos', 'Listos para envío'],
-    ['Paquetes preparando', metrics.preparing_orders ?? 0, '/admin/pedidos', 'Empaque en proceso'],
+    ['Pagados por preparar', metrics.ready_to_ship_orders ?? 0, '/admin/envios', 'Listos para envío'],
+    ['Paquetes preparando', metrics.preparing_orders ?? 0, '/admin/envios', 'Empaque en proceso'],
     ['Clientes móviles', metrics.mobile_customers ?? 0, '/admin/clientes-moviles', 'Cuentas de la app'],
     ['Unidades en inventario', metrics.inventory_units ?? 0, '/admin/productos', 'Productos activos'],
     ['Reseñas', metrics.reviews ?? 0, '/admin/resenas', 'Opiniones recibidas'],
@@ -49,14 +49,14 @@ export default function AdminDashboardPage() {
       label: 'Pagados por preparar',
       value: metrics.ready_to_ship_orders ?? 0,
       detail: Number(metrics.ready_to_ship_orders) > 0 ? 'Preparar y enviar' : 'Sin pedidos en espera',
-      path: '/admin/pedidos',
+      path: '/admin/envios',
       tone: Number(metrics.ready_to_ship_orders) > 0 ? 'critical' : 'ok',
     },
     {
       label: 'Paquetes preparando',
       value: metrics.preparing_orders ?? 0,
       detail: Number(metrics.preparing_orders) > 0 ? 'Registrar paquetería y guía' : 'Sin paquetes en preparación',
-      path: '/admin/pedidos',
+      path: '/admin/envios',
       tone: Number(metrics.preparing_orders) > 0 ? 'warning' : 'ok',
     },
     {

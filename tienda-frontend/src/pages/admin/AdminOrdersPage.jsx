@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { apiDownload, apiRequest } from '../../api/client';
 import ActionDialog from '../../components/ui/ActionDialog';
-import ShippingDialog from '../../components/admin/ShippingDialog';
+import OrderReceipt from '../../components/admin/OrderReceipt';
+import ShippingProgress from '../../components/admin/ShippingProgress';
 import Message from '../../components/ui/Message';
 import PageHeader from '../../components/ui/PageHeader';
 import StatusBadge from '../../components/ui/StatusBadge';
@@ -20,6 +21,7 @@ export default function AdminOrdersPage() {
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [pendingChange, setPendingChange] = useState(null);
+  const [receiptOrder, setReceiptOrder] = useState(null);
 
   useEffect(() => { load(); }, []);
 
@@ -51,6 +53,7 @@ export default function AdminOrdersPage() {
       setOrders((current) => current.map((item) => item.id === order.id ? updated : item));
       setSelectedOrder((current) => current?.id === order.id ? updated : current);
       setMessage(`Pedido #${order.id}: ${labels[status]}.`);
+      if (status === 'paid') setReceiptOrder(updated);
       setPendingChange(null);
     } catch (reason) {
       setError(reason.message);
@@ -84,15 +87,15 @@ export default function AdminOrdersPage() {
       <PageHeader
         eyebrow="Administración"
         title="Pedidos y pagos"
-        description="Confirma pagos, prepara entregas y consulta cada movimiento."
+        description="Revisa compras, confirma pagos OXXO y consulta recibos."
         actions={<button className="button button-secondary" onClick={() => apiDownload('/admin/reports/export?type=sales', 'pedidos.csv')} type="button">Exportar pedidos</button>}
       />
       <Message type="success">{message}</Message><Message type="error">{error}</Message>
 
       <section className="order-summary-grid">
         <article><small>OXXO por verificar</small><strong>{reportedOxxo}</strong><span>Revisar comprobante y aprobar</span></article>
-        <article className="is-paid"><small>Pagados por preparar</small><strong>{readyToShip}</strong><span>Inventario descontado</span></article>
-        <article className="is-preparing"><small>Paquetes preparando</small><strong>{preparing}</strong><span>Siguiente paso: registrar envío</span></article>
+        <article className="is-paid"><small>Pagados</small><strong>{readyToShip}</strong><span>Ya disponibles en Envíos</span></article>
+        <article className="is-preparing"><small>En proceso de envío</small><strong>{preparing}</strong><span>Controlar desde la sección Envíos</span></article>
       </section>
 
       <section className="admin-panel table-panel">
@@ -111,8 +114,8 @@ export default function AdminOrdersPage() {
                 <td><div className="item-summary">{order.items.map((item) => <span key={item.id}>{item.quantity} × {item.product_name}</span>)}</div></td>
                 <td><StatusBadge status={order.status} /><small>{paymentLabel(order)}</small><small>{order.payment_reference || 'Sin referencia'}</small></td>
                 <td><strong>{formatCurrency(order.total)}</strong></td>
-                <td><OrderActions busy={updatingId === order.id} onChange={(status) => changeStatus(order, status)} order={order} /></td>
-                <td className="table-actions"><button onClick={() => setSelectedOrder(order)} type="button">Ver detalle</button></td>
+                <td><PaymentActions busy={updatingId === order.id} onChange={(status) => changeStatus(order, status)} order={order} /></td>
+                <td className="table-actions">{order.paid_at && <button onClick={() => setReceiptOrder(order)} type="button">Recibo</button>}<button onClick={() => setSelectedOrder(order)} type="button">Ver detalle</button></td>
               </tr>
             ))}</tbody>
           </table>
@@ -138,6 +141,7 @@ export default function AdminOrdersPage() {
                 <small>Referencias o información extra</small>
                 <p>{selectedOrder.notes || 'Sin referencias adicionales.'}</p>
                 <button className="button button-secondary" onClick={() => copyAddress(selectedOrder)} type="button">{copyLabel}</button>
+                {selectedOrder.paid_at && <button className="button button-ghost" onClick={() => setReceiptOrder(selectedOrder)} type="button">Ver recibo pagado</button>}
               </article>
               <article>
                 <h3>Pago</h3>
@@ -181,19 +185,10 @@ export default function AdminOrdersPage() {
         notePlaceholder="Ejemplo: comprobante revisado, pago correcto"
         onCancel={() => setPendingChange(null)}
         onConfirm={applyStatus}
-        open={Boolean(pendingChange) && pendingChange?.status !== 'shipped'}
+        open={Boolean(pendingChange)}
         title={pendingChange?.status === 'paid' ? 'Validar pago OXXO' : `Actualizar pedido #${pendingChange?.order?.id || ''}`}
       />
-      <ShippingDialog
-        busy={updatingId === pendingChange?.order?.id}
-        onCancel={() => setPendingChange(null)}
-        onConfirm={(shipping) => applyStatus(shipping.note, {
-          shipping_carrier: shipping.shipping_carrier,
-          tracking_number: shipping.tracking_number,
-        })}
-        open={pendingChange?.status === 'shipped'}
-        order={pendingChange?.order}
-      />
+      <OrderReceipt onClose={() => setReceiptOrder(null)} order={receiptOrder} />
     </>
   );
 }
@@ -216,42 +211,18 @@ function statusChangeDescription(order, status) {
   return `El pedido #${order.id} cambiará a “${labels[status]}”.`;
 }
 
-function OrderActions({ order, busy, onChange }) {
-  const primary = {
-    pending: order.payment_reported_at ? ['paid', 'Aprobar pago OXXO'] : null,
-    paid: ['preparing', 'Preparar paquete'],
-    preparing: ['shipped', 'Registrar envío'],
-    shipped: ['delivered', 'Marcar entregado'],
-  }[order.status];
-  const canCancel = ['pending', 'paid', 'preparing'].includes(order.status);
+function PaymentActions({ order, busy, onChange }) {
+  const primary = order.status === 'pending' && order.payment_reported_at
+    ? ['paid', 'Aprobar pago OXXO']
+    : null;
+  const canCancel = ['pending', 'paid'].includes(order.status);
 
   return (
     <div className="order-flow-actions">
       {primary && <button disabled={busy} onClick={() => onChange(primary[0])} type="button">{primary[1]}</button>}
       {canCancel && <button className="danger-text" disabled={busy} onClick={() => onChange('cancelled')} type="button">Cancelar</button>}
-      {!primary && !canCancel && <span>Proceso terminado</span>}
+      {!primary && order.status === 'pending' && <span>Esperando pago</span>}
+      {!primary && !canCancel && <span>Controlar en Envíos</span>}
     </div>
-  );
-}
-
-function ShippingProgress({ order }) {
-  const steps = [
-    ['paid', 'Pago aprobado'],
-    ['preparing', 'Preparando'],
-    ['shipped', 'En camino'],
-    ['delivered', 'Entregado'],
-  ];
-  const position = steps.findIndex(([status]) => status === order.status);
-
-  if (order.status === 'pending' || order.status === 'cancelled') return null;
-
-  return (
-    <section className="shipping-progress" aria-label="Progreso del envío">
-      {steps.map(([status, label], index) => (
-        <div className={index <= position ? 'is-complete' : ''} key={status}>
-          <i>{index < position ? '✓' : index + 1}</i><span>{label}</span>
-        </div>
-      ))}
-    </section>
   );
 }

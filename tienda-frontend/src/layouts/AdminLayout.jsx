@@ -9,6 +9,7 @@ const links = [
   ['Productos', '/admin/productos', '□'],
   ['Categorías', '/admin/categorias', '◇'],
   ['Pedidos', '/admin/pedidos', '▤'],
+  ['Envíos', '/admin/envios', '➜'],
   ['Clientes móviles', '/admin/clientes-moviles', '○'],
   ['Reseñas', '/admin/resenas', '☆'],
   ['Informes', '/admin/reportes', '▥'],
@@ -60,7 +61,7 @@ export default function AdminLayout() {
           </div>
           <div className="topbar-actions">
             {paymentReview > 0 && <Link className="payment-alert-badge is-review" to="/admin/pedidos"><i /><span><small>Requiere revisión</small><b>{paymentReview} OXXO por validar</b></span></Link>}
-            {readyToShip > 0 && <Link className="payment-alert-badge is-ready" to="/admin/pedidos"><i /><span><small>Listo para envío</small><b>{readyToShip} pago{readyToShip === 1 ? '' : 's'} por preparar</b></span></Link>}
+            {readyToShip > 0 && <Link className="payment-alert-badge is-ready" to="/admin/envios"><i /><span><small>Listo para envío</small><b>{readyToShip} pago{readyToShip === 1 ? '' : 's'} por preparar</b></span></Link>}
             <span className="role-badge">Administrador</span>
           </div>
         </header>

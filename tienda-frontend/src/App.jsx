@@ -8,6 +8,7 @@ import AdminDashboardPage from './pages/admin/AdminDashboardPage';
 import AdminProductsPage from './pages/admin/AdminProductsPage';
 import AdminCategoriesPage from './pages/admin/AdminCategoriesPage';
 import AdminOrdersPage from './pages/admin/AdminOrdersPage';
+import AdminShippingPage from './pages/admin/AdminShippingPage';
 import AdminUsersPage from './pages/admin/AdminUsersPage';
 import AdminReviewsPage from './pages/admin/AdminReviewsPage';
 import AdminReportsPage from './pages/admin/AdminReportsPage';
@@ -26,6 +27,7 @@ export default function App() {
                 <Route path="productos" element={<AdminProductsPage />} />
                 <Route path="categorias" element={<AdminCategoriesPage />} />
                 <Route path="pedidos" element={<AdminOrdersPage />} />
+                <Route path="envios" element={<AdminShippingPage />} />
                 <Route path="clientes-moviles" element={<AdminUsersPage />} />
                 <Route path="resenas" element={<AdminReviewsPage />} />
                 <Route path="reportes" element={<AdminReportsPage />} />
