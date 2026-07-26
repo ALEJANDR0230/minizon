@@ -196,6 +196,52 @@ class OrderCard extends StatelessWidget {
                   'Entrega: ${order.shippingAddress}',
                   style: const TextStyle(fontSize: 12),
                 ),
+                if ([
+                  'paid',
+                  'preparing',
+                  'shipped',
+                  'delivered',
+                ].contains(order.status)) ...[
+                  const SizedBox(height: 16),
+                  _OrderProgress(status: order.status),
+                ],
+                if (order.trackingNumber?.isNotEmpty == true) ...[
+                  const SizedBox(height: 14),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF0F4FC),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'RASTREO DEL ENVÍO',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w900,
+                            color: primary,
+                            letterSpacing: 1,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          order.shippingCarrier ?? 'Paquetería',
+                          style: const TextStyle(fontWeight: FontWeight.w800),
+                        ),
+                        SelectableText(
+                          order.trackingNumber!,
+                          style: const TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
                 if (order.status == 'pending' &&
                     order.paymentReportedAt == null) ...[
                   const SizedBox(height: 14),
@@ -232,8 +278,81 @@ class OrderCard extends StatelessWidget {
 
 (String, Color, IconData) statusInfo(String value) => switch (value) {
   'paid' => ('Pagado', Colors.blue, Icons.payments_outlined),
+  'preparing' => (
+    'Preparando paquete',
+    Colors.deepOrange,
+    Icons.inventory_2_outlined,
+  ),
   'shipped' => ('En camino', Colors.indigo, Icons.local_shipping_outlined),
   'delivered' => ('Entregado', primary, Icons.check_circle_outline),
   'cancelled' => ('Cancelado', Colors.red, Icons.cancel_outlined),
   _ => ('Pendiente', Colors.orange, Icons.schedule),
 };
+
+class _OrderProgress extends StatelessWidget {
+  const _OrderProgress({required this.status});
+  final String status;
+
+  @override
+  Widget build(BuildContext context) {
+    const steps = [
+      ('paid', 'Pagado'),
+      ('preparing', 'Preparando'),
+      ('shipped', 'En camino'),
+      ('delivered', 'Entregado'),
+    ];
+    final current = steps.indexWhere((step) => step.$1 == status);
+
+    return Row(
+      children: List.generate(steps.length, (index) {
+        final complete = index <= current;
+        return Expanded(
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  if (index > 0)
+                    Expanded(
+                      child: Divider(
+                        color: complete ? primary : const Color(0xFFD9E1DE),
+                        thickness: 2,
+                      ),
+                    ),
+                  CircleAvatar(
+                    radius: 12,
+                    backgroundColor: complete
+                        ? primary
+                        : const Color(0xFFE7ECEA),
+                    child: Icon(
+                      complete ? Icons.check : Icons.circle,
+                      size: complete ? 14 : 7,
+                      color: complete ? Colors.white : const Color(0xFF9AA39F),
+                    ),
+                  ),
+                  if (index < steps.length - 1)
+                    Expanded(
+                      child: Divider(
+                        color: index < current
+                            ? primary
+                            : const Color(0xFFD9E1DE),
+                        thickness: 2,
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 5),
+              Text(
+                steps[index].$2,
+                style: TextStyle(
+                  fontSize: 9,
+                  fontWeight: FontWeight.w700,
+                  color: complete ? ink : const Color(0xFF8B9691),
+                ),
+              ),
+            ],
+          ),
+        );
+      }),
+    );
+  }
+}

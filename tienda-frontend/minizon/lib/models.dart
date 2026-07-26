@@ -139,6 +139,11 @@ class StoreOrder {
     required this.createdAt,
     required this.paidAt,
     required this.paymentReportedAt,
+    required this.preparingAt,
+    required this.shippingCarrier,
+    required this.trackingNumber,
+    required this.shippedAt,
+    required this.deliveredAt,
     required this.items,
   });
 
@@ -152,6 +157,11 @@ class StoreOrder {
   final DateTime? createdAt;
   final DateTime? paidAt;
   final DateTime? paymentReportedAt;
+  final DateTime? preparingAt;
+  final String? shippingCarrier;
+  final String? trackingNumber;
+  final DateTime? shippedAt;
+  final DateTime? deliveredAt;
   final List<OrderLine> items;
 
   factory StoreOrder.fromJson(Map<String, dynamic> json) => StoreOrder(
@@ -167,6 +177,11 @@ class StoreOrder {
     paymentReportedAt: DateTime.tryParse(
       json['payment_reported_at']?.toString() ?? '',
     ),
+    preparingAt: DateTime.tryParse(json['preparing_at']?.toString() ?? ''),
+    shippingCarrier: json['shipping_carrier']?.toString(),
+    trackingNumber: json['tracking_number']?.toString(),
+    shippedAt: DateTime.tryParse(json['shipped_at']?.toString() ?? ''),
+    deliveredAt: DateTime.tryParse(json['delivered_at']?.toString() ?? ''),
     items: (json['items'] as List? ?? const [])
         .whereType<Map>()
         .map((item) => OrderLine.fromJson(Map<String, dynamic>.from(item)))

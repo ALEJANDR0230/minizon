@@ -27,7 +27,7 @@ export default function AdminLayout() {
     const refresh = () => apiRequest('/admin/dashboard', { timeoutMs: 7000 })
       .then((data) => {
         if (!active) return;
-        setReadyToShip(Number(data?.metrics?.ready_to_ship_orders || 0));
+        setReadyToShip(Number(data?.metrics?.ready_to_ship_orders || 0) + Number(data?.metrics?.preparing_orders || 0));
         setPaymentReview(Number(data?.metrics?.oxxo_review_orders || 0));
       })
       .catch(() => {});

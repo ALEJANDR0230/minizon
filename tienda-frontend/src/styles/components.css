@@ -47,6 +47,7 @@
 .status { display: inline-flex; width: max-content; align-items: center; padding: 4px 8px; border-radius: 99px; font-size: 11px; font-weight: 800; white-space: nowrap; }
 .status-pending { color: #7c5e18; background: #fff2ca; }
 .status-paid { color: #205d67; background: #dff1f3; }
+.status-preparing { color: #7b511d; background: #f8ead7; }
 .status-shipped { color: #3c4f86; background: #e7ebfa; }
 .status-delivered { color: #256449; background: #dff3e9; }
 .status-cancelled { color: #8c3434; background: #f9e4e4; }

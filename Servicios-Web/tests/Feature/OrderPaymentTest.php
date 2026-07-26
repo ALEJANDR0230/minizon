@@ -89,5 +89,33 @@ class OrderPaymentTest extends TestCase
             ->assertJsonPath('status', 'paid');
 
         $this->assertDatabaseHas('products', ['id' => $product->id, 'stock' => 2]);
+
+        $this->actingAs($admin, 'sanctum')
+            ->putJson("/api/admin/orders/{$orderId}/status", [
+                'status' => 'preparing',
+                'note' => 'Productos revisados y empacados',
+            ])
+            ->assertOk()
+            ->assertJsonPath('status', 'preparing');
+
+        $this->actingAs($admin, 'sanctum')
+            ->putJson("/api/admin/orders/{$orderId}/status", [
+                'status' => 'shipped',
+                'shipping_carrier' => 'Estafeta',
+                'tracking_number' => 'MZ-TEST-0001',
+                'note' => 'Paquete entregado a la paqueteria',
+            ])
+            ->assertOk()
+            ->assertJsonPath('status', 'shipped')
+            ->assertJsonPath('shipping_carrier', 'Estafeta')
+            ->assertJsonPath('tracking_number', 'MZ-TEST-0001');
+
+        $this->actingAs($admin, 'sanctum')
+            ->putJson("/api/admin/orders/{$orderId}/status", [
+                'status' => 'delivered',
+                'note' => 'Entrega simulada correctamente',
+            ])
+            ->assertOk()
+            ->assertJsonPath('status', 'delivered');
     }
 }

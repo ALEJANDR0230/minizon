@@ -12,7 +12,8 @@ class OrderController extends Controller
 {
     private const TRANSITIONS = [
         'pending' => ['paid', 'cancelled'],
-        'paid' => ['shipped', 'cancelled'],
+        'paid' => ['preparing', 'cancelled'],
+        'preparing' => ['shipped', 'cancelled'],
         'shipped' => ['delivered'],
         'delivered' => [],
         'cancelled' => [],
@@ -168,6 +169,8 @@ class OrderController extends Controller
         $data = $request->validate([
             'status' => ['required', Rule::in(Order::STATUSES)],
             'note' => ['nullable', 'string', 'max:500'],
+            'shipping_carrier' => ['nullable', 'required_if:status,shipped', 'string', 'max:80'],
+            'tracking_number' => ['nullable', 'required_if:status,shipped', 'string', 'max:120'],
         ]);
 
         $updatedOrder = DB::transaction(function () use ($request, $order, $data) {
@@ -189,13 +192,18 @@ class OrderController extends Controller
                 $this->deductInventory($lockedOrder);
             }
 
-            if ($to === 'cancelled' && $from === 'paid') {
+            if ($to === 'cancelled' && in_array($from, ['paid', 'preparing'], true)) {
                 $this->restoreInventory($lockedOrder);
             }
 
             $timestamps = match ($to) {
                 'paid' => ['paid_at' => now()],
-                'shipped' => ['shipped_at' => now()],
+                'preparing' => ['preparing_at' => now()],
+                'shipped' => [
+                    'shipped_at' => now(),
+                    'shipping_carrier' => trim($data['shipping_carrier']),
+                    'tracking_number' => trim($data['tracking_number']),
+                ],
                 'delivered' => ['delivered_at' => now()],
                 'cancelled' => ['cancelled_at' => now()],
                 default => [],

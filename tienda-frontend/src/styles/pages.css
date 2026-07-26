@@ -430,7 +430,13 @@
 .order-summary-grid strong { font-size: 30px; }
 .order-summary-grid span { color: var(--muted); font-size: 11px; }
 .order-summary-grid .is-paid { border-color: #9fd2bf; background: #edf9f3; }
+.order-summary-grid .is-preparing { border-color: #b7c9ea; background: #f0f4fc; }
 .order-ready-row { background: #f1faf6; }
+.order-flow-actions { display: grid; min-width: 138px; gap: 6px; }
+.order-flow-actions button { width: 100%; padding: 7px 9px; border: 1px solid #b9d7cc; border-radius: 8px; color: #18543e; background: #edf8f3; font-size: 11px; font-weight: 800; cursor: pointer; }
+.order-flow-actions button:hover { border-color: var(--brand); background: #e1f2ea; }
+.order-flow-actions button.danger-text { border-color: transparent; color: #a43b3b; background: transparent; }
+.order-flow-actions > span { color: var(--muted); font-size: 11px; }
 .order-modal-backdrop { position: fixed; z-index: 100; inset: 0; display: grid; place-items: center; padding: 24px; background: rgba(15,31,30,.58); backdrop-filter: blur(3px); }
 .order-detail-modal { width: min(880px, 100%); max-height: calc(100vh - 48px); overflow: auto; border-radius: 18px; background: #fff; box-shadow: 0 30px 90px rgba(0,0,0,.25); }
 .order-detail-modal > header { position: sticky; z-index: 2; top: 0; display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 20px 24px; border-bottom: 1px solid var(--line); background: rgba(255,255,255,.96); }
@@ -439,6 +445,14 @@
 .order-detail-modal > header button { width: 36px; height: 36px; border: 0; border-radius: 50%; font-size: 24px; background: #edf1ef; cursor: pointer; }
 .order-detail-status { display: flex; align-items: center; gap: 10px; padding: 16px 24px; border-bottom: 1px solid var(--line); }
 .order-detail-status > span:last-child { margin-left: auto; font-size: 22px; font-weight: 900; }
+.shipping-progress { display: grid; grid-template-columns: repeat(4, 1fr); padding: 20px 24px; border-bottom: 1px solid var(--line); background: #fbfcfb; }
+.shipping-progress > div { position: relative; display: grid; justify-items: center; gap: 7px; color: #84918c; font-size: 10px; font-weight: 800; text-align: center; }
+.shipping-progress > div::before { position: absolute; z-index: 0; top: 14px; right: 50%; width: 100%; height: 2px; content: ''; background: #dfe6e3; }
+.shipping-progress > div:first-child::before { display: none; }
+.shipping-progress i { position: relative; z-index: 1; width: 29px; height: 29px; display: grid; place-items: center; border: 2px solid #d3ded9; border-radius: 50%; background: #fff; font-style: normal; }
+.shipping-progress .is-complete { color: #246348; }
+.shipping-progress .is-complete::before { background: #71b696; }
+.shipping-progress .is-complete i { border-color: #4da478; color: #fff; background: #4da478; }
 .order-detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 22px 24px; }
 .order-detail-grid article, .order-detail-items, .order-history { padding: 18px; border: 1px solid var(--line); border-radius: 13px; }
 .order-detail-grid h3, .order-detail-items h3, .order-history h3 { margin: 0 0 14px; }
@@ -455,10 +469,16 @@
 .order-history article > span { display: grid; gap: 3px; }
 .order-history article p { margin: 4px 0 0; color: var(--muted); }
 .recent-payments-panel { border-top: 3px solid #48a17c; }
+.shipping-dialog { width: min(520px, 100%); }
+.shipping-form-grid { display: grid; grid-template-columns: 1fr 1.25fr; gap: 12px; }
+.shipping-dialog select, .shipping-dialog input { width: 100%; }
 
 @media (max-width: 760px) {
   .payment-alert-badge { max-width: 170px; }
   .order-summary-grid, .order-detail-grid { grid-template-columns: 1fr; }
+  .shipping-form-grid { grid-template-columns: 1fr; }
+  .shipping-progress { padding-inline: 12px; }
+  .shipping-progress span { font-size: 9px; }
   .order-modal-backdrop { padding: 0; }
   .order-detail-modal { max-height: 100vh; min-height: 100vh; border-radius: 0; }
 }

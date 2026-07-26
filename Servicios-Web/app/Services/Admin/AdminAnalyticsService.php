@@ -109,6 +109,7 @@ class AdminAnalyticsService
                     ->whereNotNull('payment_reported_at')
                     ->count(),
                 'ready_to_ship_orders' => Order::where('status', 'paid')->count(),
+                'preparing_orders' => Order::where('status', 'preparing')->count(),
                 'reviews' => ProductReview::count(),
                 'revenue' => round((float) (clone $revenueQuery)->sum('total'), 2),
                 'revenue_month' => round((float) (clone $revenueQuery)

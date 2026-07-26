@@ -1,6 +1,7 @@
 const labels = {
   pending: 'Pendiente',
   paid: 'Pagado',
+  preparing: 'Preparando',
   shipped: 'Enviado',
   delivered: 'Entregado',
   cancelled: 'Cancelado',
