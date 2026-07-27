@@ -27,7 +27,7 @@ export default function LoginPage() {
   return (
     <main className="admin-login-page">
       <section className="admin-login-card">
-        <div className="login-brand"><span>mitienda</span><small>administración</small></div>
+        <div className="login-brand"><span>Minizon</span><small>administración</small></div>
         <div className="login-copy">
           <span className="eyebrow">Panel administrativo</span>
           <h1>Iniciar sesión</h1>

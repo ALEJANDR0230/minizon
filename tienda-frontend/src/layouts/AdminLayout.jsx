@@ -45,7 +45,7 @@ export default function AdminLayout() {
   return (
     <div className="admin-shell">
       <aside className="admin-sidebar">
-        <NavLink className="admin-brand" to="/admin">mitienda <span>administración</span></NavLink>
+        <NavLink className="admin-brand" to="/admin">Minizon <span>administración</span></NavLink>
         <nav aria-label="Secciones administrativas">
           {links.map(([label, path, icon]) => (
             <NavLink key={path} to={path} end={path === '/admin'}><i aria-hidden="true">{icon}</i>{label}</NavLink>

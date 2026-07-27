@@ -87,7 +87,7 @@ export default function AdminReportsPage() {
 
       {loading && !data ? <LoadingState label="Generando resumen…" /> : (
         <div className="report-sheet">
-          <header><div><small>Informe de tu tienda</small><h2>{data?.period?.from} — {data?.period?.to}</h2></div><strong>mitienda</strong></header>
+          <header><div><small>Informe de tu tienda</small><h2>{data?.period?.from} — {data?.period?.to}</h2></div><strong>Minizon</strong></header>
           <section className="report-summary-grid">
             <article><small>Ventas</small><strong>{formatCurrency(summary.revenue)}</strong></article>
             <article><small>Pedidos</small><strong>{summary.orders ?? 0}</strong></article>
