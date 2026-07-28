@@ -1,0 +1,26 @@
+{
+    admin off
+    persist_config off
+    auto_https off
+    log {
+        format json
+    }
+    servers {
+        trusted_proxies static private_ranges 100.0.0.0/8
+    }
+}
+
+:{$PORT:3000} {
+    @www host www.minizon.store
+    redir @www https://minizon.store{uri} permanent
+
+    log {
+        format json
+    }
+
+    respond /health "ok" 200
+    root * dist
+    encode gzip
+    try_files {path} /index.html
+    file_server
+}

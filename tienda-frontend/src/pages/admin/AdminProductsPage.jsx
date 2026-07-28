@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { apiRequest, apiUpload } from '../../api/client';
+import { apiRequest, apiUpload, resolveMediaUrl } from '../../api/client';
 import Message from '../../components/ui/Message';
 import PageHeader from '../../components/ui/PageHeader';
 
@@ -61,7 +61,7 @@ export default function AdminProductsPage() {
       is_active: product.is_active,
     });
     setImageFile(null);
-    setImagePreview(product.image_url || '');
+    setImagePreview(resolveMediaUrl(product.image_url) || '');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
@@ -159,7 +159,7 @@ export default function AdminProductsPage() {
               <thead><tr><th>Producto</th><th>Categoría</th><th>Precio</th><th>Stock</th><th>Estado</th><th /></tr></thead>
               <tbody>{filteredProducts.map((product) => (
                 <tr key={product.id}>
-                  <td><div className="product-table-name">{product.image_url ? <img alt="" src={product.image_url} /> : <span>□</span>}<span><strong>{product.name}</strong><small>{product.sku}</small></span></div></td>
+                  <td><div className="product-table-name">{product.image_url ? <img alt="" src={resolveMediaUrl(product.image_url)} /> : <span>□</span>}<span><strong>{product.name}</strong><small>{product.sku}</small></span></div></td>
                   <td>{product.category?.name || 'Sin categoría'}</td>
                   <td>${Number(product.price).toFixed(2)}</td>
                   <td><span className={product.stock <= 5 ? 'stock-low' : ''}>{product.stock}</span></td>
