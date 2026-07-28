@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 import '../models.dart';
@@ -15,6 +16,14 @@ class PaymentScreen extends StatefulWidget {
 
 class _PaymentScreenState extends State<PaymentScreen> {
   bool confirming = false;
+
+  String _detectCardType(String value) {
+    final digits = value.replaceAll(RegExp(r'\D'), '');
+    if (digits.startsWith('4')) return 'VISA';
+    if (digits.startsWith('5')) return 'MASTERCARD';
+    if (digits.startsWith('3')) return 'AMEX';
+    return '';
+  }
 
   String get reference => widget.order.paymentReference?.isNotEmpty == true
       ? widget.order.paymentReference!
@@ -54,6 +63,160 @@ class _PaymentScreenState extends State<PaymentScreen> {
     } finally {
       if (mounted) setState(() => confirming = false);
     }
+  }
+
+  Future<void> openCardPaymentDialog() async {
+    final formKey = GlobalKey<FormState>();
+    final cardNameController = TextEditingController();
+    final cardNumberController = TextEditingController();
+    final expiryController = TextEditingController();
+    final cvvController = TextEditingController();
+
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        String cardType = '';
+
+        return StatefulBuilder(
+          builder: (context, setDialogState) => AlertDialog(
+            title: const Text('Pago con tarjeta'),
+            content: SingleChildScrollView(
+              child: Form(
+                key: formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextFormField(
+                      controller: cardNameController,
+                      decoration: const InputDecoration(
+                        labelText: 'Nombre del titular',
+                        border: OutlineInputBorder(),
+                      ),
+                      textCapitalization: TextCapitalization.words,
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Ingresa el nombre del titular';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: cardNumberController,
+                      decoration: InputDecoration(
+                        labelText: 'Número de tarjeta',
+                        border: const OutlineInputBorder(),
+                        suffixIcon: cardType.isEmpty
+                            ? null
+                            : Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 10),
+                                child: Center(
+                                  child: Text(
+                                    cardType,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w800,
+                                      color: primary,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                      ),
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                        LengthLimitingTextInputFormatter(19),
+                        _CardNumberFormatter(),
+                      ],
+                      onChanged: (value) {
+                        setDialogState(() {
+                          cardType = _detectCardType(value);
+                        });
+                      },
+                      validator: (value) {
+                        final digits = value?.replaceAll(RegExp(r'\D'), '') ?? '';
+                        if (digits.length != 16) {
+                          return 'Ingresa 16 dígitos válidos';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextFormField(
+                            controller: expiryController,
+                            decoration: const InputDecoration(
+                              labelText: 'MM/AA',
+                              border: OutlineInputBorder(),
+                            ),
+                            keyboardType: TextInputType.number,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.digitsOnly,
+                              LengthLimitingTextInputFormatter(4),
+                              _ExpiryDateFormatter(),
+                            ],
+                            validator: (value) {
+                              final expiry = value?.trim() ?? '';
+                              if (!RegExp(r'^(0[1-9]|1[0-2])/\d{2}$').hasMatch(expiry)) {
+                                return 'Fecha inválida';
+                              }
+                              return null;
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: TextFormField(
+                            controller: cvvController,
+                            decoration: const InputDecoration(
+                              labelText: 'CVV',
+                              border: OutlineInputBorder(),
+                            ),
+                            keyboardType: TextInputType.number,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.digitsOnly,
+                              LengthLimitingTextInputFormatter(3),
+                            ],
+                            validator: (value) {
+                              if (value == null || value.trim().length != 3) {
+                                return 'CVV inválido';
+                              }
+                              return null;
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext),
+                child: const Text('Cancelar'),
+              ),
+              FilledButton(
+                onPressed: () {
+                  if (formKey.currentState!.validate()) {
+                    Navigator.pop(dialogContext);
+                    confirm();
+                  }
+                },
+                child: const Text('Confirmar pago'),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+
+    cardNameController.dispose();
+    cardNumberController.dispose();
+    expiryController.dispose();
+    cvvController.dispose();
   }
 
   @override
@@ -194,6 +357,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
             ),
           ),
           const SizedBox(height: 18),
+
+          // --- 1. BOTÓN ORIGINAL DE OXXO ---
           FilledButton.icon(
             onPressed: confirming ? null : confirm,
             icon: confirming
@@ -210,14 +375,91 @@ class _PaymentScreenState extends State<PaymentScreen> {
               confirming ? 'Validando pago…' : 'Ya pagué · Confirmar pago',
             ),
           ),
+
           const SizedBox(height: 12),
+
+          // --- 2. NUEVO BOTÓN SIMULADO DE TARJETA ---
+          FilledButton.icon(
+            onPressed: confirming ? null : openCardPaymentDialog,
+            icon: confirming
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                : const Icon(Icons.credit_card),
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFF004481),
+              foregroundColor: Colors.white,
+            ),
+            label: Text(
+              confirming ? 'Procesando tarjeta…' : 'Pagar con Tarjeta',
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          // --- 3. TEXTO DE DEMOSTRACIÓN ---
           const Text(
-            'Modo demostración: el botón simula la confirmación del proveedor de pagos. Para recibir pagos reales en OXXO se necesita contratar un proveedor y validar mediante webhook.',
+            'Modo demostración: los botones simulan la confirmación del proveedor de pagos. Para recibir pagos reales se necesita integrar un SDK (como Stripe) y validar mediante webhook.',
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 11, color: Color(0xFF6D7772)),
           ),
         ],
       ),
+    );
+  }
+}
+
+class _CardNumberFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final digits = newValue.text.replaceAll(RegExp(r'\D'), '');
+    if (digits.length > 16) {
+      return oldValue;
+    }
+
+    final buffer = StringBuffer();
+    for (var i = 0; i < digits.length; i++) {
+      if (i > 0 && i % 4 == 0) {
+        buffer.write(' ');
+      }
+      buffer.write(digits[i]);
+    }
+
+    final formatted = buffer.toString();
+    return TextEditingValue(
+      text: formatted,
+      selection: TextSelection.collapsed(offset: formatted.length),
+    );
+  }
+}
+
+class _ExpiryDateFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final digits = newValue.text.replaceAll(RegExp(r'\D'), '');
+    if (digits.length > 4) {
+      return oldValue;
+    }
+
+    String formatted = digits;
+    if (digits.length > 2) {
+      formatted = '${digits.substring(0, 2)}/${digits.substring(2)}';
+    }
+
+    return TextEditingValue(
+      text: formatted,
+      selection: TextSelection.collapsed(offset: formatted.length),
     );
   }
 }
