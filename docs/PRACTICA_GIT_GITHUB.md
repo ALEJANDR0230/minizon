@@ -14,7 +14,7 @@ El repositorio ya existía y contiene un proyecto. Se reutiliza por indicación 
 | Requerimiento | Estado y evidencia |
 |---|---|
 | Creación de repositorio | Se explica el procedimiento; se trabaja sobre `minizon`, ya existente. |
-| Colaboradores | Se prepararon invitaciones a los dos correos proporcionados. El envío y la aceptación se deben comprobar en Settings > Collaborators. |
+| Colaboradores | Invitaciones enviadas a los dos correos proporcionados. Pendientes de aceptación por sus destinatarios en Settings > Collaborators. |
 | Protección de `main` | Regla clásica creada en Settings > Branches, con PR obligatorio y una aprobación. |
 | Flujo por computadora | Procedimiento completo en las secciones 4 y 5. |
 | Explicación de comandos | Cada comando mostrado incluye finalidad y momento de uso. |
@@ -45,6 +45,8 @@ No hace falta ejecutar `git init` después de clonar: el clon ya incluye el repo
 5. Comprobar que aparece como colaborador activo; **Pending invitation** indica que todavía no aceptó. La invitación por correo no demuestra por sí sola cuál es su nombre de usuario.
 
 Cada participante recibe su invitación de forma individual y usa su propia cuenta y credenciales.
+
+**Resultado comprobado:** GitHub vinculó los correos a `mandobito3-netizen` y `alavezhardam-jpg`. Se enviaron ambas invitaciones y la página muestra **2 invitations**, cada una con **Pending Invite** y esperando respuesta. Hasta que cada persona acepte, no se considera colaborador activo.
 
 En un repositorio personal como `ALEJANDR0230/minizon`, los colaboradores tienen lectura y escritura. No hay un selector equivalente a `Read` para cada colaborador. Como el repositorio es público, cualquier persona puede consultar o clonar su contenido sin recibir escritura. No invitar como colaborador a quien deba conservar únicamente lectura. [Permisos en repositorios personales](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/repository-access-and-collaboration/permission-levels-for-a-personal-account-repository).
 
@@ -93,6 +95,8 @@ En **Settings > Branches > Add classic branch protection rule**, el patrón es e
 No se activa **Lock branch**, porque impediría también integrar los PR. No se exigen comprobaciones de CI todavía: deben elegirse trabajos concretos y operativos antes de añadir ese requisito. Tampoco se impone historial lineal, por lo que se puede usar un merge commit.
 
 La regla se guardó y GitHub mostró **Branch protection rule created**, aplicada a una rama. En una cuenta Free las protecciones se aplican a repositorios públicos como este. [Documentación oficial de ramas protegidas](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches).
+
+**Evidencia real de esta sesión:** se creó la rama `alejandro/practica-git-github` y el [PR #3](https://github.com/ALEJANDR0230/minizon/pull/3) con la guía en `docs/PRACTICA_GIT_GITHUB.md`. El editor indicó que no se podía guardar directamente en `main`. El PR muestra **Review required**, **Merging is blocked** y el botón de merge deshabilitado, pendiente de una aprobación de alguien con escritura distinto del último autor del push. El PR permanece abierto; no se simuló una aprobación independiente.
 
 Para comprobarlo con un cambio real, intentar un PR sin aprobación: GitHub debe bloquear el merge. Aprobar desde otra cuenta con escritura: el PR podrá integrarse si las demás condiciones se cumplen. No probar un push prohibido usando una credencial que no corresponde al usuario: eso verifica a la persona autenticada, no al nombre configurado en el commit.
 
